@@ -100,7 +100,7 @@ async function udpateDeal() {
         },
         body: JSON.stringify({
           fieldData: {
-            "ESTADO HS": "probando denuevo" 
+            "ESTADO HS": "render.com" 
           }
         })
         });
@@ -121,8 +121,8 @@ const PORT = process.env.PORT || 3000;
 
 // Ruta de prueba para chequear que el servidor funciona
 app.get("/", async (req, res) => {
-  const token = await getFileMakerToken();
-  res.send(`✅ Servidor activo. Token FileMaker: ${token}`);
+  udpateDeal();
+  res.send(`✅ Servidor activo. Negocio actualizado`);
 });
 
 // A futuro, podrías agregar esto para recibir datos desde HubSpot:

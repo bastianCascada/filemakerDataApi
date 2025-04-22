@@ -114,4 +114,4 @@ async function udpateDeal() {
 }
 
 
-getFileMakerToken();
+// getFileMakerToken();

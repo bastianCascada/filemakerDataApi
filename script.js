@@ -113,5 +113,29 @@ async function udpateDeal() {
     }
 }
 
+const express = require("express");
+const app = express();
+app.use(express.json());
+
+const PORT = process.env.PORT || 3000;
+
+// Ruta de prueba para chequear que el servidor funciona
+app.get("/", async (req, res) => {
+  const token = await getFileMakerToken();
+  res.send(`✅ Servidor activo. Token FileMaker: ${token}`);
+});
+
+// A futuro, podrías agregar esto para recibir datos desde HubSpot:
+app.post("/hubspot", (req, res) => {
+  console.log("📩 Webhook de HubSpot:", req.body);
+  // Acá procesás o reenviás los datos a FileMaker
+  res.sendStatus(200);
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor escuchando en el puerto ${PORT}`);
+});
+
+
 
 // getFileMakerToken();

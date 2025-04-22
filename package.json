@@ -9,6 +9,7 @@
     "start": "node script.js"
   },
   "dependencies": {
+    "express": "^5.1.0",
     "nodemon": "^3.1.9"
   }
 }

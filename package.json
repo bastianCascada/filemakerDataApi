@@ -1,0 +1,11 @@
+{
+  "name": "filemakerDataApi",
+  "version": "1.0.0",
+  "main": "script.js",
+  "author": "Bastian <bastian@cascada.travel>",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

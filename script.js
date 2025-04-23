@@ -15,18 +15,18 @@ app.listen(PORT, () => {
 
 
 app.post("/update-deal", async (req, res) => {
-    const { codigoNegocio, ...otrosCampos } = req.body;
+    const { r_filemaker, ...otrosCampos } = req.body;
   
     // Validación básica
-    if (!codigoNegocio || Object.keys(otrosCampos).length === 0) {
+    if (!r_filemaker || Object.keys(otrosCampos).length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Se requiere 'codigoNegocio' y al menos un campo a actualizar"
+        message: "Se requiere 'r_filemaker' y al menos un campo a actualizar"
       });
     }
   
     try {
-      const result = await updateDeal(codigoNegocio, otrosCampos);
+      const result = await updateDeal(r_filemaker, otrosCampos);
       res.json({
         success: true,
         message: "Deal actualizado correctamente.",

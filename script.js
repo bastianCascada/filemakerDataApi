@@ -43,11 +43,11 @@ app.post("/update-deal", async (req, res) => {
   });
   
 
-// Esto es temporal para ignorar el certificado SSL (sacalo en producción)
+// Esto es temporal para ignorar el certificado SSL (sacar en producción)
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 
-// Codificamos en base64 → 
+// Codificamos en base64 el usuario que realizara la tarea en FM en este caso el usuario es "bastian"
 const encodedCredentials = "YmFzdGlhbjpDbGF2ZWZpbGVtYWtlcjIzMjQu";
 
 async function getFileMakerToken() {
@@ -161,12 +161,3 @@ async function updateDeal(codigoNegocio, campos) {
   const data = await response.json();
   return data;
 }
-  
-  
-
-
-  
-
-
-
-// getFileMakerToken();

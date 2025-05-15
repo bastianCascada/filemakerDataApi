@@ -40,22 +40,34 @@ app.post("/update-deal", async (req, res) => {
   }
 });
 
-app.post("/create-deal", async (req, res) => {
-  const campos = req.body; // los campos que envía el cliente
+// app.post("/create-deal", async (req, res) => {
+//   const campos = req.body; // los campos que envía el cliente
 
+//   try {
+//     const resultado = await createDeal(campos);
+//     res.status(201).json({
+//       success: true,
+//       message: "Deal creado correctamente",
+//       data: resultado,
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       success: false,
+//       message: "Error al crear el deal",
+//       error: error.message,
+//     });
+//   }
+// });
+
+app.post("/create-deal", async (req, res) => {
+  res.status(200).json({ success: true, message: "Recibido" });
+
+  // Luego seguir procesando
   try {
-    const resultado = await createDeal(campos);
-    res.status(201).json({
-      success: true,
-      message: "Deal creado correctamente",
-      data: resultado,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error al crear el deal",
-      error: error.message,
-    });
+    await createDeal(req.body); // o lo que corresponda
+    console.log("✅ Deal creado correctamente.");
+  } catch (err) {
+    console.error("❌ Error al crear deal:", err);
   }
 });
 

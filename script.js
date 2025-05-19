@@ -187,7 +187,10 @@ async function updateDeal(codigoNegocio, campos) {
 }
 
 async function createDeal(campos = {}) {
-  console.log(campos);
+  let id_hubspot = campos.objectId;
+  let nombre_negocio = campos.properties.dealname.value;
+  console.log(id_hubspot);
+  console.log(nombre_negocio);
 
   const token = await getFileMakerToken();
 

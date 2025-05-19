@@ -4,6 +4,14 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 
+// Esto es temporal para ignorar el certificado SSL (sacar en producción)
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
+// Codificamos en base64 el usuario que realizara la tarea en FM en este caso el usuario es "bastian"
+const encodedCredentials = "YmFzdGlhbjpDbGF2ZWZpbGVtYWtlcjIzMjQu";
+
+// ****************************[INICIO] RUTAS****************************
+
 // Ruta de prueba para chequear que el servidor funciona
 app.get("/", async (req, res) => {
   res.send(`✅ Servidor activo.`);
@@ -26,6 +34,31 @@ app.post("/update-deal", async (req, res) => {
 
   try {
     const result = await updateDeal(r_filemaker, otrosCampos);
+    res.json({
+      success: true,
+      message: "Deal actualizado correctamente.",
+      result,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error al actualizar el deal",
+      error: error.message,
+    });
+  }
+});
+
+app.post("/modificarEtapaNegocio", async (req, res) => {
+  let data = req.body;
+
+  let dealStage = dealStageName(data.properties.dealstage.value);
+
+  let campos = {
+    "ESTADO HS": dealStage,
+  };
+
+  try {
+    const result = await updateDeal(data.objectI, campos);
     res.json({
       success: true,
       message: "Deal actualizado correctamente.",
@@ -71,11 +104,9 @@ app.post("/create-deal", async (req, res) => {
   }
 });
 
-// Esto es temporal para ignorar el certificado SSL (sacar en producción)
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// ****************************[FIN] RUTAS****************************
 
-// Codificamos en base64 el usuario que realizara la tarea en FM en este caso el usuario es "bastian"
-const encodedCredentials = "YmFzdGlhbjpDbGF2ZWZpbGVtYWtlcjIzMjQu";
+// ****************************[INICIO] FUNCIONES****************************
 
 async function getFileMakerToken() {
   var url =
@@ -163,6 +194,7 @@ async function getDeal(codigoNegocio) {
 
 async function updateDeal(codigoNegocio, campos) {
   const token = await getFileMakerToken();
+  // Necesitamos el recordID del negocio para poder manipularlo en FM
   const recordId = await getDeal(codigoNegocio);
 
   if (!recordId) {
@@ -219,3 +251,38 @@ async function createDeal(campos = {}) {
 
   return data;
 }
+
+function dealStageName(codigoDealStage) {
+  const stages = {
+    28494: "Solicita Servicio/Disponibilidad",
+    28495: "Quote Sent",
+    "d639ed73-f757-493a-a003-a425ad1b428a": "Quote Approved",
+    28496: "Negocio Confirmado - Won",
+    1186454: "Negocio listo para Welcome Letter",
+    104531513: "Welcome letter lista con Observaciones",
+    44174387: "Welcome letter lista",
+    31786122: "Welcome Letter Enviada",
+    28497: "Negocio perdido - Lost",
+    appointmentscheduled: "Solicita servicio",
+    presentationscheduled: "Proposal/Quote SENT",
+    "205628d6-121b-4c99-921b-fb79a02eba79": "Booking Instructions SENT",
+    closedwon: "Pago recibido 20% - Won",
+    799833: "Pago 100% recibido",
+    793264: "Negocio listo para Customer Service",
+    31782955: "Welcome Letter Enviada",
+    closedlost: "Cierre perdido",
+    145110416: "Welcome Letter Lista",
+    455777: "Solicita servicio",
+    "f8b3f59c-e4f4-465d-a2fe-4342235ebefb": "Proposal/Quote SENT",
+    "334dcddd-c1e7-4b58-8fa6-939bef3ae9f6": "Proposal/Quote Approved",
+    892488: "Negocio Confirmado",
+    892489: "Negocio Listo para Customer Service",
+    31791890: "Welcome Letter Enviada",
+    "048aee24-fb6d-4ad7-8141-3f3c8c282292": "Closed Lost",
+    147809430: "Welcome Letter Lista",
+  };
+
+  return stages[codigoDealStage] ?? "Desconocido";
+}
+
+// ****************************[FIN] FUNCIONES****************************

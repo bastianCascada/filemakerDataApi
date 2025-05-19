@@ -58,7 +58,7 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
   };
 
   try {
-    const result = await updateDeal(data.objectI, campos);
+    const result = await updateDeal(data.objectId, campos);
     res.json({
       success: true,
       message: "Deal actualizado correctamente.",

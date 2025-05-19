@@ -203,7 +203,10 @@ async function createDeal(campos = {}) {
       Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
-      fieldData: campos,
+      fieldData: {
+        "IDE HUBSPOT": id_hubspot,
+        "NOMBRE DEL NEGOCIO": nombre_negocio,
+      },
     }),
   });
 

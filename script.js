@@ -51,6 +51,7 @@ app.post("/update-deal", async (req, res) => {
 app.post("/modificarEtapaNegocio", async (req, res) => {
   let data = req.body;
 
+  let r_filemaker = data.properties.generado_en_sistema.value;
   let dealStage = dealStageName(data.properties.dealstage.value);
 
   let campos = {
@@ -58,7 +59,7 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
   };
 
   try {
-    const result = await updateDeal(data.objectId, campos);
+    const result = await updateDeal(r_filemaker, campos);
     res.json({
       success: true,
       message: "Deal actualizado correctamente.",

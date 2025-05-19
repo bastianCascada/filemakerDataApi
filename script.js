@@ -189,27 +189,27 @@ async function updateDeal(codigoNegocio, campos) {
 async function createDeal(campos = {}) {
   console.log(campos);
 
-  // const token = await getFileMakerToken();
+  const token = await getFileMakerToken();
 
-  // const url = `https://190.151.60.197/fmi/data/vLatest/databases/Negocios%20Receptivo_prueba/layouts/Negocios%20PHP/records`;
+  const url = `https://190.151.60.197/fmi/data/vLatest/databases/Negocios%20Receptivo_prueba/layouts/Negocios%20PHP/records`;
 
-  // const response = await fetch(url, {
-  //   method: "POST",
-  //   headers: {
-  //     "Content-Type": "application/json",
-  //     Authorization: `Bearer ${token}`,
-  //   },
-  //   body: JSON.stringify({
-  //     fieldData: campos,
-  //   }),
-  // });
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      fieldData: campos,
+    }),
+  });
 
-  // const data = await response.json();
+  const data = await response.json();
 
-  // if (!response.ok) {
-  //   console.error("❌ Error al crear el deal:", data);
-  //   throw new Error(data.messages?.[0]?.message || "Error desconocido");
-  // }
+  if (!response.ok) {
+    console.error("❌ Error al crear el deal:", data);
+    throw new Error(data.messages?.[0]?.message || "Error desconocido");
+  }
 
-  // return data;
+  return data;
 }

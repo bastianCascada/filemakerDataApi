@@ -65,12 +65,16 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
       message: "Deal actualizado correctamente.",
       result,
     });
+
+    console.log("✅ Deal actualizado correctamente");
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Error al actualizar el deal",
       error: error.message,
     });
+
+    console.log("✅ Deal actualizado correctamente");
   }
 });
 
@@ -157,8 +161,8 @@ async function getAllDeals() {
   }
 }
 
-async function getDeal(codigoNegocio) {
-  const token = await getFileMakerToken();
+async function getDeal(token, codigoNegocio) {
+  // const token = await getFileMakerToken();
 
   const url =
     "https://190.151.60.197/fmi/data/vLatest/databases/Negocios%20Receptivo_prueba/layouts/Negocios%20PHP/_find";
@@ -196,7 +200,7 @@ async function getDeal(codigoNegocio) {
 async function updateDeal(codigoNegocio, campos) {
   const token = await getFileMakerToken();
   // Necesitamos el recordID del negocio para poder manipularlo en FM
-  const recordId = await getDeal(codigoNegocio);
+  const recordId = await getDeal(token, codigoNegocio);
 
   if (!recordId) {
     throw new Error(`No se encontró el deal con código: ${codigoNegocio}`);

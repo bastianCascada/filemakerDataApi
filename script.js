@@ -1,5 +1,12 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
+// servidor de pruebas
+// const FM_HOST = "190.151.60.197";
+// const DATABASE = "Negocios%20Receptivo_prueba";
+const DATABASE = process.env.DATABASE;
+const FM_HOST = process.env.FM_HOST;
+
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
@@ -8,7 +15,11 @@ const PORT = process.env.PORT || 3000;
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // Codificamos en base64 el usuario que realizara la tarea en FM en este caso el usuario es "bastian"
-const encodedCredentials = "YmFzdGlhbjpDbGF2ZWZpbGVtYWtlcjIzMjQu";
+const encodedCredentials = process.env.encodedCredentials;
+
+console.log(DATABASE);
+console.log(FM_HOST);
+console.log(encodedCredentials);
 
 // ****************************[INICIO] RUTAS****************************
 
@@ -74,28 +85,9 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
       error: error.message,
     });
 
-    console.log("✅ Deal actualizado correctamente");
+    console.log("❌ Error al actualizar el deal");
   }
 });
-
-// app.post("/create-deal", async (req, res) => {
-//   const campos = req.body; // los campos que envía el cliente
-
-//   try {
-//     const resultado = await createDeal(campos);
-//     res.status(201).json({
-//       success: true,
-//       message: "Deal creado correctamente",
-//       data: resultado,
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Error al crear el deal",
-//       error: error.message,
-//     });
-//   }
-// });
 
 app.post("/create-deal", async (req, res) => {
   res.status(200).json({ success: true, message: "Recibido" });
@@ -115,8 +107,12 @@ app.post("/create-deal", async (req, res) => {
 
 async function getFileMakerToken() {
   var url =
-    "https://190.151.60.197/fmi/data/vLatest/databases/Negocios%20Receptivo_prueba/sessions";
-
+    // Servidor de pruebas
+    "https://" +
+    FM_HOST +
+    "/fmi/data/vLatest/databases/" +
+    DATABASE +
+    "/sessions";
   try {
     const response = await fetch(url, {
       method: "POST",
@@ -143,7 +139,11 @@ async function getAllDeals() {
   const token = await getFileMakerToken();
 
   var url =
-    "https://190.151.60.197/fmi/data/vLatest/databases/Negocios%20Receptivo_prueba/layouts/Negocios%20PHP/records";
+    "https://" +
+    FM_HOST +
+    "/fmi/data/vLatest/databases/" +
+    DATABASE +
+    "/layouts/Negocios%20PHP/records";
 
   try {
     const response = await fetch(url, {
@@ -165,7 +165,12 @@ async function getDeal(token, codigoNegocio) {
   // const token = await getFileMakerToken();
 
   const url =
-    "https://190.151.60.197/fmi/data/vLatest/databases/Negocios%20Receptivo_prueba/layouts/Negocios%20PHP/_find";
+    // Servidor de pruebas
+    "https://" +
+    FM_HOST +
+    "/fmi/data/vLatest/databases/" +
+    DATABASE +
+    "/layouts/Negocios%20PHP/_find";
 
   try {
     const response = await fetch(url, {
@@ -199,14 +204,20 @@ async function getDeal(token, codigoNegocio) {
 
 async function updateDeal(codigoNegocio, campos) {
   const token = await getFileMakerToken();
+
   // Necesitamos el recordID del negocio para poder manipularlo en FM
   const recordId = await getDeal(token, codigoNegocio);
 
   if (!recordId) {
     throw new Error(`No se encontró el deal con código: ${codigoNegocio}`);
   }
-
-  const url = `https://190.151.60.197/fmi/data/vLatest/databases/Negocios%20Receptivo_prueba/layouts/Negocios%20PHP/records/${recordId}`;
+  // Servidor pruebas
+  const url =
+    `https://` +
+    FM_HOST +
+    `/fmi/data/vLatest/databases/` +
+    DATABASE +
+    `/layouts/Negocios%20PHP/records/${recordId}`;
 
   const response = await fetch(url, {
     method: "PATCH",
@@ -231,7 +242,12 @@ async function createDeal(campos = {}) {
 
   const token = await getFileMakerToken();
 
-  const url = `https://190.151.60.197/fmi/data/vLatest/databases/Negocios%20Receptivo_prueba/layouts/Negocios%20PHP/records`;
+  const url =
+    `https://` +
+    FM_HOST +
+    `/fmi/data/vLatest/databases/` +
+    DATABASE +
+    `/layouts/Negocios%20PHP/records`;
 
   const response = await fetch(url, {
     method: "POST",

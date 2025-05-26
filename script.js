@@ -89,6 +89,36 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
   }
 });
 
+app.post("/modificarLlegaPor", async (req, res) => {
+  let data = req.body;
+
+  let r_filemaker = data.properties.generado_en_sistema.value;
+  let llega_por = data.properties.llega_por.value;
+
+  let campos = {
+    "LLEGA POR": llega_por,
+  };
+
+  try {
+    const result = await updateDeal(r_filemaker, campos);
+    res.json({
+      success: true,
+      message: "Deal actualizado correctamente.",
+      result,
+    });
+
+    console.log("✅ Deal actualizado correctamente");
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error al actualizar el deal",
+      error: error.message,
+    });
+
+    console.log("❌ Error al actualizar el deal");
+  }
+});
+
 app.post("/create-deal", async (req, res) => {
   res.status(200).json({ success: true, message: "Recibido" });
 

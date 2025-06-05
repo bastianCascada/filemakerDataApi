@@ -156,7 +156,7 @@ app.post("/modificarQpax", async (req, res) => {
   let qpax = data.properties.qpax.value;
 
   let campos = {
-    "N° PAX": qpax,
+    "Nº PAX": qpax,
   };
 
   try {

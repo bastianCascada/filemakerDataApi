@@ -17,10 +17,6 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 // Codificamos en base64 el usuario que realizara la tarea en FM en este caso el usuario es "bastian"
 const encodedCredentials = process.env.encodedCredentials;
 
-console.log(DATABASE);
-console.log(FM_HOST);
-console.log(encodedCredentials);
-
 // ****************************[INICIO] RUTAS****************************
 
 // Ruta de prueba para chequear que el servidor funciona

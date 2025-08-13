@@ -61,28 +61,33 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
   let r_filemaker = data.properties.generado_en_sistema.value;
   let dealStage = dealStageName(data.properties.dealstage.value);
 
-  let campos = {
-    "ESTADO HS": dealStage,
-  };
+  if(r_filemaker != undefined){
+    let campos = {
+      "ESTADO HS": dealStage,
+    };
 
-  try {
-    const result = await updateDeal(r_filemaker, campos);
-    res.json({
-      success: true,
-      message: "Deal actualizado correctamente.",
-      result,
-    });
+    try {
+      const result = await updateDeal(r_filemaker, campos);
+      res.json({
+        success: true,
+        message: "Deal actualizado correctamente.",
+        result,
+      });
 
-    console.log("✅ Deal actualizado correctamente");
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error al actualizar el deal",
-      error: error.message,
-    });
+      console.log("✅ Deal actualizado correctamente");
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: "Error al actualizar el deal",
+        error: error.message,
+      });
 
-    console.log("❌ Error al actualizar el deal");
+      console.log("❌ Error al actualizar el deal");
+    }
+  }else{
+    console.log("El R del negocio aun no se crea");
   }
+  
 });
 
 app.post("/modificarLlegaPor", async (req, res) => {

@@ -12,7 +12,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 // Esto es temporal para ignorar el certificado SSL (sacar en producción)
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 // Codificamos en base64 el usuario que realizara la tarea en FM en este caso el usuario es "bastian"
 const encodedCredentials = process.env.encodedCredentials;

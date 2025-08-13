@@ -58,7 +58,7 @@ app.post("/update-deal", async (req, res) => {
 app.post("/modificarEtapaNegocio", async (req, res) => {
   let data = req.body;
 
-  console.log(data);
+  console.log(data.properties.generado_en_sistema);
 
   let r_filemaker = data.properties.generado_en_sistema.value;
   let dealStage = dealStageName(data.properties.dealstage.value);

@@ -60,11 +60,13 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
 
   console.log(data.properties.generado_en_sistema);
 
-  let r_filemaker = data.properties.generado_en_sistema.value;
-  let dealStage = dealStageName(data.properties.dealstage.value);
+  if(data.properties.generado_en_sistema != undefined){
+    
+    let r_filemaker = data.properties.generado_en_sistema.value;
+    let dealStage = dealStageName(data.properties.dealstage.value);
 
   
-  if(r_filemaker != undefined){
+  
     let campos = {
       "ESTADO HS": dealStage,
     };

@@ -61,7 +61,7 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
   console.log(data.properties.generado_en_sistema);
 
   if(data.properties.generado_en_sistema != undefined){
-    
+
     let r_filemaker = data.properties.generado_en_sistema.value;
     let dealStage = dealStageName(data.properties.dealstage.value);
 
@@ -90,7 +90,7 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
       console.log("❌ Error al actualizar el deal");
     }
   }else{
-    console.log("El R del negocio aun no se crea");
+    console.log("El R del negocio aun no se ha creado");
   }
   
 });
@@ -192,8 +192,8 @@ app.post("/create-deal", async (req, res) => {
   try {
     await createDeal(req.body); // o lo que corresponda
     console.log("✅ Deal creado correctamente.");
-  } catch (err) {
-    console.error("❌ Error al crear deal:", err);
+  } catch (error) {
+    console.error("❌ Error al crear deal:", error);
   }
 });
 
@@ -231,6 +231,40 @@ async function getFileMakerToken() {
   }
 }
 
+async function logoutFileMakerSession(token) {
+  // Es crucial tener un token para poder cerrar la sesión
+  if (!token) {
+    console.error("❌ No se proporcionó un token para cerrar la sesión.");
+    return;
+  }
+
+  // La URL para cerrar sesión incluye el token al final
+  var url =
+    "https://" +
+    FM_HOST +
+    "/fmi/data/vLatest/databases/" +
+    DATABASE +
+    "/sessions/" +
+    token;
+
+  try {
+    const response = await fetch(url, {
+      method: "DELETE", // El método para cerrar sesión es DELETE
+    });
+
+    const data = await response.json();
+
+    // Una respuesta exitosa de cierre de sesión tiene un código "0"
+    if (response.ok && data.messages[0].code === "0") {
+      console.log("✅ Sesión cerrada correctamente.");
+    } else {
+      console.error("❌ Error al cerrar la sesión:", data);
+    }
+  } catch (error) {
+    console.error("🚨 Error de conexión al cerrar sesión en FileMaker:", error.message);
+  }
+}
+
 async function getAllDeals() {
   const token = await getFileMakerToken();
 
@@ -254,6 +288,11 @@ async function getAllDeals() {
     console.log(data.response.data);
   } catch (error) {
     console.error("🚨 Error :", error.message);
+  } finally {
+    if (token) {
+      console.log("⏳ Cerrando la sesión...");
+      await logoutFileMakerSession(token);
+    }
   }
 }
 
@@ -295,78 +334,133 @@ async function getDeal(token, codigoNegocio) {
   } catch (error) {
     console.error("🚨 Error al buscar deal:", error.message);
     throw error;
+  } finally {
+    if (token) {
+      console.log("⏳ Cerrando la sesión...");
+      await logoutFileMakerSession(token);
+    }
   }
 }
 
 async function updateDeal(codigoNegocio, campos) {
-  const token = await getFileMakerToken();
+  let token = null; // 1. Declara el token aquí para que sea accesible en 'finally'
 
-  // Necesitamos el recordID del negocio para poder manipularlo en FM
-  const recordId = await getDeal(token, codigoNegocio);
+  try {
+    // 2. Intenta ejecutar toda la lógica principal
+    token = await getFileMakerToken();
+    if (!token) {
+      throw new Error("No se pudo obtener el token de FileMaker.");
+    }
 
-  if (!recordId) {
-    throw new Error(`No se encontró el deal con código: ${codigoNegocio}`);
+    // Necesitamos el recordID del negocio para poder manipularlo en FM
+    const recordId = await getDeal(token, codigoNegocio);
+    if (!recordId) {
+      throw new Error(`❌ No se encontró el deal con código: ${codigoNegocio}`);
+    }
+
+    const url =
+      `https://` +
+      FM_HOST +
+      `/fmi/data/vLatest/databases/` +
+      DATABASE +
+      `/layouts/Negocios%20PHP/records/${recordId}`;
+
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        fieldData: campos,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.messages[0].code === "0") {
+      console.log(`✅ Deal ${codigoNegocio} actualizado correctamente.`);
+      return data; // Retorna el resultado si todo fue exitoso
+    } else {
+      // Si la API de FileMaker devuelve un error, lánzalo para que lo capture el 'catch'
+      throw new Error(`Error de FileMaker al actualizar: ${data.messages[0].message}`);
+    }
+
+  } catch (error) {
+    // 3. Captura cualquier error que ocurra en el bloque 'try'
+    console.error("🚨 Error durante la actualización del deal:", error.message);
+    // Opcionalmente, puedes retornar un valor de error o simplemente dejar que la función termine
+    return { success: false, error: error.message };
+
+  } finally {
+    // 4. Se ejecuta SIEMPRE, haya habido éxito o error
+    if (token) {
+      console.log("⏳ Cerrando sesión de FileMaker...");
+      await logoutFileMakerSession(token); // Asume que tienes esta función de la respuesta anterior
+    }
   }
-  // Servidor pruebas
-  const url =
-    `https://` +
-    FM_HOST +
-    `/fmi/data/vLatest/databases/` +
-    DATABASE +
-    `/layouts/Negocios%20PHP/records/${recordId}`;
-
-  const response = await fetch(url, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      fieldData: campos,
-    }),
-  });
-
-  const data = await response.json();
-  return data;
 }
 
 async function createDeal(campos = {}) {
-  let id_hubspot = campos.objectId;
-  let nombre_negocio = campos.properties.dealname.value;
-  console.log(id_hubspot);
-  console.log(nombre_negocio);
+  let token = null; // 1. Declara el token aquí para que sea accesible en 'finally'
 
-  const token = await getFileMakerToken();
+  try {
+    // Extrae los datos necesarios del objeto de entrada
+    const id_hubspot = campos.objectId;
+    const nombre_negocio = campos.properties.dealname.value;
+    
+    console.log(`Creando deal para HubSpot ID: ${id_hubspot}`);
 
-  const url =
-    `https://` +
-    FM_HOST +
-    `/fmi/data/vLatest/databases/` +
-    DATABASE +
-    `/layouts/Negocios%20PHP/records`;
+    // 2. Intenta ejecutar la lógica principal
+    token = await getFileMakerToken();
+    if (!token) {
+      throw new Error("No se pudo obtener el token de FileMaker.");
+    }
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      fieldData: {
-        "IDE HUBSPOT": id_hubspot,
-        "NOMBRE DEL NEGOCIO": nombre_negocio,
+    const url =
+      `https://` +
+      FM_HOST +
+      `/fmi/data/vLatest/databases/` +
+      DATABASE +
+      `/layouts/Negocios%20PHP/records`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-    }),
-  });
+      body: JSON.stringify({
+        fieldData: {
+          "IDE HUBSPOT": id_hubspot,
+          "NOMBRE DEL NEGOCIO": nombre_negocio,
+        },
+      }),
+    });
 
-  const data = await response.json();
+    const data = await response.json();
 
-  if (!response.ok) {
-    console.error("❌ Error al crear el deal:", data);
-    throw new Error(data.messages?.[0]?.message || "Error desconocido");
+    if (response.ok && data.messages[0].code === "0") {
+      console.log(`✅ Deal ${nombre_negocio} creado exitosamente en FileMaker.`);
+      return data; // Retorna la respuesta exitosa
+    } else {
+      // Si la API de FileMaker devuelve un error, lánzalo
+      throw new Error(`Error de FileMaker al crear: ${data.messages[0].message}`);
+    }
+
+  } catch (error) {
+    // 3. Captura cualquier error que ocurra en el bloque 'try'
+    console.error("🚨 Error durante la creación del deal:", error.message);
+    return { success: false, error: error.message }; // Retorna un objeto de error
+
+  } finally {
+    // 4. Se ejecuta SIEMPRE, garantizando el cierre de sesión
+    if (token) {
+      console.log("⏳ Cerrando sesión de FileMaker...");
+      // Asume que tienes la función logoutFileMakerSession de las respuestas anteriores
+      await logoutFileMakerSession(token); 
+    }
   }
-
-  return data;
 }
 
 function dealStageName(codigoDealStage) {

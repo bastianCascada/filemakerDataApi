@@ -288,12 +288,8 @@ async function getAllDeals() {
     console.log(data.response.data);
   } catch (error) {
     console.error("🚨 Error :", error.message);
-  } finally {
-    if (token) {
-      console.log("⏳ Cerrando la sesión...");
-      await logoutFileMakerSession(token);
-    }
-  }
+  } 
+  
 }
 
 async function getDeal(token, codigoNegocio) {
@@ -334,12 +330,8 @@ async function getDeal(token, codigoNegocio) {
   } catch (error) {
     console.error("🚨 Error al buscar deal:", error.message);
     throw error;
-  } finally {
-    if (token) {
-      console.log("⏳ Cerrando la sesión...");
-      await logoutFileMakerSession(token);
-    }
-  }
+  } 
+
 }
 
 async function updateDeal(codigoNegocio, campos) {

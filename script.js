@@ -289,7 +289,7 @@ async function getAllDeals() {
   } catch (error) {
     console.error("🚨 Error :", error.message);
   } 
-  
+
 }
 
 async function getDeal(token, codigoNegocio) {
@@ -335,63 +335,147 @@ async function getDeal(token, codigoNegocio) {
 }
 
 async function updateDeal(codigoNegocio, campos) {
-  let token = null; // 1. Declara el token aquí para que sea accesible en 'finally'
+  let token = null;
+  const maxRetries = 3; // Número máximo de reintentos
+  const retryDelay = 500; // Tiempo de espera en milisegundos (0.5 segundos)
 
   try {
-    // 2. Intenta ejecutar toda la lógica principal
     token = await getFileMakerToken();
     if (!token) {
       throw new Error("No se pudo obtener el token de FileMaker.");
     }
 
-    // Necesitamos el recordID del negocio para poder manipularlo en FM
+    // El recordId solo lo buscamos una vez.
     const recordId = await getDeal(token, codigoNegocio);
     if (!recordId) {
       throw new Error(`❌ No se encontró el deal con código: ${codigoNegocio}`);
     }
 
-    const url =
-      `https://` +
-      FM_HOST +
-      `/fmi/data/vLatest/databases/` +
-      DATABASE +
-      `/layouts/Negocios%20PHP/records/${recordId}`;
+    // --- INICIO DE LA LÓGICA DE REINTENTOS ---
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`Intento ${attempt} de ${maxRetries} para actualizar el deal ${codigoNegocio}...`);
 
-    const response = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        fieldData: campos,
-      }),
-    });
+        const url =
+          `https://` +
+          FM_HOST +
+          `/fmi/data/vLatest/databases/` +
+          DATABASE +
+          `/layouts/Negocios%20PHP/records/${recordId}`;
 
-    const data = await response.json();
+        const response = await fetch(url, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            fieldData: campos,
+          }),
+        });
 
-    if (response.ok && data.messages[0].code === "0") {
-      console.log(`✅ Deal ${codigoNegocio} actualizado correctamente.`);
-      return data; // Retorna el resultado si todo fue exitoso
-    } else {
-      // Si la API de FileMaker devuelve un error, lánzalo para que lo capture el 'catch'
-      throw new Error(`Error de FileMaker al actualizar: ${data.messages[0].message}`);
+        const data = await response.json();
+
+        // Si la actualización es exitosa, salimos del bucle y retornamos los datos.
+        if (response.ok && data.messages[0].code === "0") {
+          console.log(`✅ Deal ${codigoNegocio} actualizado correctamente.`);
+          return data;
+        }
+
+        // Si el error es específicamente "Record in use" (código 301 de FM)
+        if (data.messages[0].code === "301") {
+          console.warn(`Registro ${codigoNegocio} en uso. Reintentando en ${retryDelay}ms...`);
+          // Si es el último intento, lanzamos el error para que sea capturado afuera.
+          if (attempt === maxRetries) {
+            throw new Error(`Error de FileMaker al actualizar: ${data.messages[0].message} (después de ${maxRetries} intentos)`);
+          }
+          // Esperamos antes del siguiente intento
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        } else {
+          // Si es otro tipo de error de FileMaker, lo lanzamos inmediatamente.
+          throw new Error(`Error de FileMaker al actualizar: ${data.messages[0].message}`);
+        }
+
+      } catch (error) {
+        // Si el error es por el reintento y ya no quedan más, lo relanzamos
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        // Si no, el bucle continuará al siguiente intento (si el error fue el 301)
+      }
     }
+    // --- FIN DE LA LÓGICA DE REINTENTOS ---
 
   } catch (error) {
-    // 3. Captura cualquier error que ocurra en el bloque 'try'
-    console.error("🚨 Error durante la actualización del deal:", error.message);
-    // Opcionalmente, puedes retornar un valor de error o simplemente dejar que la función termine
+    console.error("🚨 Error final durante la actualización del deal:", error.message);
     return { success: false, error: error.message };
 
   } finally {
-    // 4. Se ejecuta SIEMPRE, haya habido éxito o error
     if (token) {
       console.log("⏳ Cerrando sesión de FileMaker...");
-      await logoutFileMakerSession(token); // Asume que tienes esta función de la respuesta anterior
+      await logoutFileMakerSession(token);
     }
   }
 }
+
+// async function updateDeal(codigoNegocio, campos) {
+//   let token = null; // 1. Declara el token aquí para que sea accesible en 'finally'
+
+//   try {
+//     // 2. Intenta ejecutar toda la lógica principal
+//     token = await getFileMakerToken();
+//     if (!token) {
+//       throw new Error("No se pudo obtener el token de FileMaker.");
+//     }
+
+//     // Necesitamos el recordID del negocio para poder manipularlo en FM
+//     const recordId = await getDeal(token, codigoNegocio);
+//     if (!recordId) {
+//       throw new Error(`❌ No se encontró el deal con código: ${codigoNegocio}`);
+//     }
+
+//     const url =
+//       `https://` +
+//       FM_HOST +
+//       `/fmi/data/vLatest/databases/` +
+//       DATABASE +
+//       `/layouts/Negocios%20PHP/records/${recordId}`;
+
+//     const response = await fetch(url, {
+//       method: "PATCH",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${token}`,
+//       },
+//       body: JSON.stringify({
+//         fieldData: campos,
+//       }),
+//     });
+
+//     const data = await response.json();
+
+//     if (response.ok && data.messages[0].code === "0") {
+//       console.log(`✅ Deal ${codigoNegocio} actualizado correctamente.`);
+//       return data; // Retorna el resultado si todo fue exitoso
+//     } else {
+//       // Si la API de FileMaker devuelve un error, lánzalo para que lo capture el 'catch'
+//       throw new Error(`Error de FileMaker al actualizar: ${data.messages[0].message}`);
+//     }
+
+//   } catch (error) {
+//     // 3. Captura cualquier error que ocurra en el bloque 'try'
+//     console.error("🚨 Error durante la actualización del deal:", error.message);
+//     // Opcionalmente, puedes retornar un valor de error o simplemente dejar que la función termine
+//     return { success: false, error: error.message };
+
+//   } finally {
+//     // 4. Se ejecuta SIEMPRE, haya habido éxito o error
+//     if (token) {
+//       console.log("⏳ Cerrando sesión de FileMaker...");
+//       await logoutFileMakerSession(token); // Asume que tienes esta función de la respuesta anterior
+//     }
+//   }
+// }
 
 async function createDeal(campos = {}) {
   let token = null; // 1. Declara el token aquí para que sea accesible en 'finally'

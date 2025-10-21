@@ -6,6 +6,7 @@ const app = express();
 // const DATABASE = "Negocios%20Receptivo_prueba";
 const DATABASE = process.env.DATABASE;
 const FM_HOST = process.env.FM_HOST;
+const TOKEN_HUBSPOT = process.env.TOKEN_HUBSPOT;
 
 app.use(express.json());
 
@@ -707,7 +708,7 @@ async function obtenerDatosFetch(url) {
     const respuesta = await fetch(url, {
       headers: {
         // Agrega la cabecera de autorización con el esquema "Bearer"
-        'Authorization': `Bearer pat-na1-c068ed9e-382e-4fa9-8817-1bd783e100c6`,
+        'Authorization': `Bearer ${TOKEN_HUBSPOT}`,
         'Content-Type': 'application/json'
       }
     });

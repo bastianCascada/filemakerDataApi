@@ -429,6 +429,8 @@ async function createDeal(campos = {}) {
     const id_deal = campos.objectId;
     const url_deal = "https://api.hubapi.com/deals/v1/deal/"+id_deal;
     const data_deal = obtenerDatosFetch(url_deal);
+    console.log(data_deal);
+    
     const id_contacto = data_deal.associations.associatedVids[0];
     const nombre_negocio = data_deal.dealname.value;
     const monto = (data_deal.properties.amount.value).replaceAll(".", ",");

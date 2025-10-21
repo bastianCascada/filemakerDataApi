@@ -703,15 +703,22 @@ async function IngresarNegocioHubspot() {
 
 async function obtenerDatosFetch(url) {
   try {
-    // Realiza la petición a la URL
-    const respuesta = await fetch(url);
+    // Realiza la petición a la URL, añadiendo las cabeceras (headers)
+    const respuesta = await fetch(url, {
+      headers: {
+        // Agrega la cabecera de autorización con el esquema "Bearer"
+        'Authorization': `Bearer pat-na1-c068ed9e-382e-4fa9-8817-1bd783e100c6`,
+        'Content-Type': 'application/json'
+      }
+    });
 
     // Verifica si la respuesta fue exitosa (código 200-299).
     if (!respuesta.ok) {
+        // Lanza un error con el status para poder identificar problemas (ej. 401, 403)
         throw new Error(`Error en la petición: ${respuesta.status}`);
     }
 
-    // Simula json_decode(): convierte la respuesta a un objeto JSON.
+    // Convierte la respuesta a un objeto JSON.
     const dataDeal = await respuesta.json();
 
     // Ahora puedes usar la variable dataDeal como un objeto de JavaScript.

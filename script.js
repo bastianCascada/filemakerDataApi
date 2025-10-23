@@ -428,6 +428,10 @@ async function createDeal(campos = {}) {
     // Extrae los datos necesarios del objeto de entrada
     const id_deal = campos.objectId;
     const url_deal = "https://api.hubapi.com/deals/v1/deal/"+id_deal;
+    console.log(TOKEN_HUBSPOT);
+    console.log(url_deal);
+    
+    
     const data_deal = await obtenerDatosFetch(url_deal);
     console.log(data_deal);
     

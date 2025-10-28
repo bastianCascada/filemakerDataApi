@@ -59,8 +59,6 @@ app.post("/update-deal", async (req, res) => {
 app.post("/modificarEtapaNegocio", async (req, res) => {
   let data = req.body;
 
-  console.log(data.properties.generado_en_sistema);
-
   if(data.properties.generado_en_sistema != undefined){
 
     let r_filemaker = data.properties.generado_en_sistema.value;
@@ -286,7 +284,6 @@ async function getAllDeals() {
     });
 
     const data = await response.json();
-    console.log(data.response.data);
   } catch (error) {
     console.error("🚨 Error :", error.message);
   } 
@@ -428,20 +425,33 @@ async function createDeal(campos = {}) {
     // Extrae los datos necesarios del objeto de entrada
     let id_deal = campos.objectId;
     let url_deal = "https://api.hubapi.com/deals/v1/deal/"+id_deal;
-    console.log(TOKEN_HUBSPOT);
-    console.log(url_deal);
     
     
     let data_deal = await obtenerDatosFetch(url_deal);
-    console.log(data_deal);
     
-    let id_contacto = data_deal.associations.associatedVids[0];
-    let nombre_negocio = data_deal.dealname.value;
-    let monto = (data_deal.properties.amount.value).replaceAll(".", ",");
-    let moneda = data_deal.properties.deal_currency_code.value;
-    let mail_vendedor = data_deal.properties.createdate.sourceId;
+    let id_contacto = data_deal.associations?.associatedVids[0] ;
+                
+    let nombre_negocio = data_deal.properties.dealname?.value ;
 
-    let $id_propietario = data_deal.properties.hubspot_owner_id.value;
+    let monto = (data_deal.properties.amount?.value || '').replaceAll('.', ',');
+
+    let moneda = data_deal.properties.deal_currency_code?.value ;
+    let mail_vendedor = data_deal.properties.createdate?.sourceId ;
+
+    let id_propietario = data_deal.properties.hubspot_owner_id?.value ;
+
+    let url_vendedor  = "https://api.hubspot.com/crm/v3/owners/"+id_propietario;
+
+
+    let data_vendedor = await obtenerDatosFetch(url_vendedor);
+
+    
+
+    let email_vendedor = data_vendedor.email;
+    
+    let vendedor = data_vendedor.firstName;
+
+    let apellido_vendedor = data_vendedor.lastName;
 
     if(mail_vendedor == ""){
       
@@ -451,9 +461,9 @@ async function createDeal(campos = {}) {
       mail_vendedor = "lila@cascada.travel";
     }
 
-    let pax = data_deal.properties.qpax.value;
+    let pax = data_deal.properties.qpax?.value;
 
-    let timestampSegundos_fecha_inicio = Math.floor(((data_deal.properties.fecha_inicio_viaje.value)/1000) + 4 * 3600)
+    let timestampSegundos_fecha_inicio = Math.floor(((data_deal.properties.fecha_inicio_viaje?.value)/1000) + 4 * 3600)
 
     let fecha_inicio_Obj = new Date(timestampSegundos_fecha_inicio * 1000);
 
@@ -465,44 +475,67 @@ async function createDeal(campos = {}) {
 
     let fecha_inicio = formateador.format(fecha_inicio_Obj);
 
-    let timestampSegundos_fecha_creacion = Math.floor(((data_deal.properties.createdate.value)/1000) + 4 * 3600)
+    let timestampSegundos_fecha_creacion = Math.floor(((data_deal.properties.createdate?.value)/1000) + 4 * 3600)
 
     let fecha_creacion_Obj = new Date(timestampSegundos_fecha_creacion * 1000);
 
     let fecha_creacion = formateador.format(fecha_creacion_Obj);
 
-    let tipo_cliente = data_deal.properties.pipeline.value;
+    let tipo_cliente = data_deal.properties.pipeline?.value;
 
-    let tipo_viajero = data_deal.properties.tipo_de_viajero.value;
+    let tipo_viajero = data_deal.properties.tipo_de_viajero?.value;
 
-    let llega_por = data_deal.properties.llega_por.value;
+    let llega_por = data_deal.properties.llega_por?.value;
 
-    let stage = data_deal.properties.dealstage.value;
+    let stage = data_deal.properties.dealstage?.value;
 
-    let booking_checkfront = data_deal.properties.booking_checkfront.value;
+    let etapa = "";
 
-    let tipo_ota = data_deal.properties.tipo_de_ota.value;
+    let id_cliente = "";
 
-    let deal_stage = data_deal.properties.dealstage.value;   
+    let email_cliente = "";
+
+    let nombre_cliente = "";
+
+    let apellido_cliente = "";
+
+    let pais_cliente = "";
+
+    let idioma_de_preferencia_cliente = "";
+
+    let rut_empresa = "";
+
+    let pais_empresa = "";
+
+    let id_contacto_to = "";
+
+    let email_contacto_to = "";
+
+    let booking_checkfront = data_deal.properties.booking_checkfront?.value ?? "";
+
+    let tipo_ota = data_deal.properties.tipo_de_ota?.value ;
+
+    let deal_stage = data_deal.properties.dealstage?.value; 
+
 
 
     if(stage == 'closedwon' || stage == '28496' || stage == '799833' || stage == '892488'){ // 799833 = 100% won FIT , 28496 = won 20% TO , closedwon = 20% won FIT, won TO = 892488
 
-      let etapa = "NEGOCIO";
+      etapa = "NEGOCIO";
 
-    }else if(stage == 'appointmentscheduled' || stage == '28494' || stage == '455777'){
-
-      let etapa = "COTIZACION";
-
+    }else if(stage == 'appointmentscheduled' || stage == '28494' || stage == '455777' || stage == 'closedlost'){
+      
+      etapa = "COTIZACION";
+      
     } // solicita disponibilidad
-
-         
+    
+    
     let pipeline_to = "76c9c89c-91f7-42ca-93ba-34a0aa882cca"; // pipeline TO
-
+    
     let pipeline_fit = "default"; // pipeline FIT
-
+    
     let pipeline_ota = "c787fac9-442b-4ec7-b009-5af7f023d99e";
-
+    
 
 
       if(tipo_cliente == pipeline_fit){
@@ -517,37 +550,32 @@ async function createDeal(campos = {}) {
 
         tipo_cliente = "RECEPTIVO / OTA";
 
-      }
+      }                           
 
 
+      if(tipo_cliente.toUpperCase() == "RECEPTIVO / FIT" || (tipo_cliente.toUpperCase() == "RECEPTIVO / OTA" && tipo_ota == 'P2')){
 
+        if(data_deal.associations?.associatedVids[0]){ //obtener datos del cliente (contact hubspot)
 
-         
-
-      if(toUpperCase(tipo_cliente) == "RECEPTIVO / FIT" || (toUpperCase(tipo_cliente) == "RECEPTIVO / OTA" && tipo_ota == 'P2')){
-
-        if(data_deal.associations.associatedVids[0]){ //obtener datos del cliente (contact hubspot)
-
-            let id_cliente = data_deal.associations.associatedVids[0];
+            id_cliente = data_deal.associations?.associatedVids[0];
 
             let url_cliente = 'https://api.hubapi.com/contacts/v1/contact/vid/'+id_cliente+'/profile';
 
             try{
-
                
-              let data_cliente = obtenerDatosFetch(url_cliente);
+              let data_cliente = await obtenerDatosFetch(url_cliente);
+              
+              id_cliente = (data_cliente.properties.email?.value).replaceAll('@', '-');
 
-              let id_cliente = data_cliente.properties.email.value;
+              email_cliente = data_cliente.properties.email?.value;
 
-              let email_cliente = data_cliente.properties.email.value;
+              nombre_cliente = data_cliente.properties.firstname?.value;
 
-              let nombre_cliente = data_cliente.properties.firstname.value;
+              apellido_cliente = data_cliente.properties.lastname?.value;           
 
-              let apellido_cliente = data_cliente.properties.lastname.value;           
+              pais_cliente = data_cliente.properties.country?.value;
 
-              let pais_cliente = data_cliente.properties.country.value;
-
-              let idioma_de_preferencia_cliente = data_cliente.properties.idioma_de_preferencia.value;
+              idioma_de_preferencia_cliente = data_cliente.properties.idioma_de_preferencia?.value;
 
            }catch(error ){
 
@@ -561,49 +589,49 @@ async function createDeal(campos = {}) {
 
       }
 
-      else if(toUpperCase(tipo_cliente) == "RECEPTIVO / OPERADOR" || (toUpperCase(tipo_cliente) == "RECEPTIVO / OTA" && tipo_ota == 'P1')){
+      else if(tipo_cliente.toUpperCase() == "RECEPTIVO / OPERADOR" || (tipo_cliente.toUpperCase() == "RECEPTIVO / OTA" && tipo_ota == 'P1')){
 
-         if(data_deal.associations.associatedCompanyIds[0]){//obtener datos de la compañia (company hubspot)
+         if(data_deal.associations?.associatedCompanyIds[0]){//obtener datos de la compañia (company hubspot)
 
-            let id_cliente = data_deal.associations.associatedVids[0];
+            id_cliente = data_deal.associations?.associatedCompanyIds[0];
 
             let url_cliente = 'https://api.hubapi.com/companies/v2/companies/'+id_cliente;
-
+          
             try{
 
-              let data_cliente = obtenerDatosFetch(url_cliente);
+              let data_cliente = await obtenerDatosFetch(url_cliente);
 
               
-              let nombre_cliente = data_cliente.properties.name.value;
+              nombre_cliente = data_cliente.properties.name?.value;
 
-              let id_cliente = data_cliente.properties.name.value;
+              id_cliente = data_cliente.properties.name?.value;
 
-              let rut_empresa = data_cliente.properties.rut_to.value;
+              rut_empresa = data_cliente.properties.rut_to?.value;
 
-              let pais = data_cliente.properties.country.value;
+              pais_empresa = data_cliente.properties.country?.value;
 
             }
 
             catch(error){
 
-              console.error("No se encontro data de cliente");
+              console.error("No se encontro data de cliente empresa");
 
             }
 
          }
 
-         if(data_deal.associations.associatedVids[0]){//obtener datos del contacto Tour Operador
+         if(data_deal.associations?.associatedVids[0]){//obtener datos del contacto Tour Operador
 
-            let id_contacto_to = data_deal.associations.associatedVids[0];
+            id_contacto_to = data_deal.associations?.associatedVids[0];
 
             let url_cliente_to = 'https://api.hubapi.com/contacts/v1/contact/vid/'+id_contacto_to+'/profile';
 
             try{
 
-               data_contacto_to = obtenerDatosFetch(url_cliente_to); 
+              data_contacto_to = obtenerDatosFetch(url_cliente_to); 
 
              
-               let email_contacto_to = data_contacto_to.properties.email.value;
+              email_contacto_to = data_contacto_to.properties.email?.value;
 
             }
 
@@ -618,75 +646,69 @@ async function createDeal(campos = {}) {
       }
 
 
-    console.log(`Creando deal para HubSpot ID: ${id_deal}`);
-    console.log(id_deal);
-    console.log(id_contacto);
-    console.log(nombre_negocio);
-    console.log(monto);
-    console.log(moneda);
-    console.log(mail_vendedor);
-    console.log(id_propietario);
-    console.log(pax);
-    console.log(fecha_inicio);
-    console.log(fecha_creacion);
-    console.log(tipo_cliente);
-    console.log(tipo_viajero);
-    console.log(llega_por);
-    console.log(stage);
-    console.log(booking_checkfront);
-    console.log(tipo_ota);
-    console.log(deal_stage);
-    console.log(etapa);
-    console.log(pipeline_to);
-    console.log(pipeline_fit);
-    console.log(pipeline_ota);
-    console.log(id_cliente);
-    console.log(email_cliente);
-    console.log(nombre_cliente);
-    console.log(apellido_cliente);
-    console.log(pais_cliente);
-    console.log(idioma_de_preferencia_cliente);
-    console.log(rut_empresa);
-    console.log(pais);
-    console.log(id_contacto_to);
-    console.log(email_contacto_to);
-
     // 2. Intenta ejecutar la lógica principal
     token = await getFileMakerToken();
     if (!token) {
       throw new Error("No se pudo obtener el token de FileMaker.");
     }
+    
+    let url =
+      `https://` +
+      FM_HOST +
+      `/fmi/data/vLatest/databases/` +
+      DATABASE +
+      `/layouts/Negocios%20PHP/_find`;
 
-    // const url =
-    //   `https://` +
-    //   FM_HOST +
-    //   `/fmi/data/vLatest/databases/` +
-    //   DATABASE +
-    //   `/layouts/Negocios%20PHP/records`;
+    let response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        "query": [
+          {"IDE HUBSPOT": `==${id_deal}`}
+      ],
+      }),
+    });
+        let data = await response.json();
+        
+        data = data.response.data[0]?.fieldData
+        
 
-    // const response = await fetch(url, {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //     Authorization: `Bearer ${token}`,
-    //   },
-    //   body: JSON.stringify({
-    //     fieldData: {
-    //       "IDE HUBSPOT": id_deal,
-    //       "NOMBRE DEL NEGOCIO": nombre_negocio,
-    //     },
-    //   }),
-    // });
+        if(data){
+          vendedor = data?.VENDEDOR;
+        }
+        
 
-    // const data = await response.json();
+    
+    parametros = "idhs=\""+id_deal+"\"; idclientehs=\""+id_contacto+"\"; etapa=\""+etapa+"\";  booking=\""+booking_checkfront+"\"; tipocliente=\""+tipo_cliente.toUpperCase()+"\"; tipoOta=\""+tipo_ota+"\";idcliente=\""+id_cliente+"\"; rutempresa=\""+rut_empresa+"\"; nombrecliente=\""+nombre_cliente+"\";apellidoCliente=\""+apellido_cliente+"\"; emaildecontacto=\""+email_cliente+"\";mailcliente=\""+email_cliente+"\"; nombrenegocio=\""+nombre_negocio+"\"; monto=\""+monto+"\";moneda=\""+moneda+"\"; mailvendedor=\""+email_vendedor+"\"; vendedor=\""+vendedor+"\"; apellidovendedor=\""+apellido_vendedor+"\"; fechacreacion=\""+fecha_creacion+"\"; pax=\""+pax+"\"; fechainicio=\""+fecha_inicio+"\"; pais=\""+pais_cliente+"\"; tipodeviajero=\""+tipo_viajero+"\";llegapor=\""+llega_por+"\"; productos=\"\"; deal_stage=\""+deal_stage+"\"; idioma_de_preferencia=\""+idioma_de_preferencia_cliente+"\" ";
+    
+    let url_2 =
+      `https://` +
+      FM_HOST +
+      `/fmi/data/vLatest/databases/` +
+      DATABASE +
+      `/layouts/Negocios%20PHP/script/CrearNegocioHS?script.param=`+encodeURIComponent(parametros);;
 
-    // if (response.ok && data.messages[0].code === "0") {
-    //   console.log(`✅ Deal ${nombre_negocio} creado exitosamente en FileMaker.`);
-    //   return data; // Retorna la respuesta exitosa
-    // } else {
-    //   // Si la API de FileMaker devuelve un error, lánzalo
-    //   throw new Error(`Error de FileMaker al crear: ${data.messages[0].message}`);
-    // }
+    let response_2 = await fetch(url_2, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+
+    let data_2 = await response_2.json();
+
+    
+
+    if (response.ok && data_2.messages[0].code === "0") {
+      console.log(`✅ Deal ${nombre_negocio} creado exitosamente en FileMaker.`);
+      return data_2; // Retorna la respuesta exitosa
+    } else {
+      // Si la API de FileMaker devuelve un error, lánzalo
+      throw new Error(`Error de FileMaker al crear: ${data_2.messages[0].message}`);
+    }
 
   } catch (error) {
     // 3. Captura cualquier error que ocurra en el bloque 'try'
@@ -729,7 +751,6 @@ async function obtenerDatosFetch(url) {
     const dataDeal = await respuesta.json();
 
     // Ahora puedes usar la variable dataDeal como un objeto de JavaScript.
-    console.log(dataDeal);
     return dataDeal;
 
   } catch (error) {

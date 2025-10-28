@@ -90,7 +90,7 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
     }
   }else{
     await createDeal(data);
-    console.log("El R del negocio aun no se ha creado");
+    // console.log("El R del negocio aun no se ha creado");
   }
   
 });

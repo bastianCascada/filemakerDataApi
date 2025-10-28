@@ -89,6 +89,7 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
       console.log("❌ Error al actualizar el deal");
     }
   }else{
+    await createDeal(data);
     console.log("El R del negocio aun no se ha creado");
   }
   

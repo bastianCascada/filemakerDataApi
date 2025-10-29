@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 // Esto es temporal para ignorar el certificado SSL (sacar en producción)
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
-// Codificamos en base64 el usuario que realizara la tarea en FM en este caso el usuario es "bastian"
+// Codificamos en base64 el usuario que realizara la tarea en FM 
 const encodedCredentials = process.env.encodedCredentials;
 
 // ****************************[INICIO] RUTAS****************************
@@ -196,6 +196,20 @@ app.post("/create-deal", async (req, res) => {
     console.error("❌ Error al crear deal:", error);
   }
 });
+
+app.post("/crear_lista_participantes", async (req, res) => {
+  res.status(200).json({ success: true, message: "Recibido" });
+
+  // Luego seguir procesando
+  try {
+    await crearListaParticipantes(req.body); // o lo que corresponda
+    console.log("Lista de participantes creada exitosamente.");
+  } catch (error) {
+    console.error("❌ Error al crear la lista de participantes:", error);
+  }
+});
+
+
 
 // ****************************[FIN] RUTAS****************************
 
@@ -683,7 +697,7 @@ async function createDeal(campos = {}) {
         
 
     
-    parametros = "idhs=\""+id_deal+"\"; idclientehs=\""+id_contacto+"\"; etapa=\""+etapa+"\";  booking=\""+booking_checkfront+"\"; tipocliente=\""+tipo_cliente.toUpperCase()+"\"; tipoOta=\""+tipo_ota+"\";idcliente=\""+id_cliente+"\"; rutempresa=\""+rut_empresa+"\"; nombrecliente=\""+nombre_cliente+"\";apellidoCliente=\""+apellido_cliente+"\"; emaildecontacto=\""+email_cliente+"\";mailcliente=\""+email_cliente+"\"; nombrenegocio=\""+nombre_negocio+"\"; monto=\""+monto+"\";moneda=\""+moneda+"\"; mailvendedor=\""+email_vendedor+"\"; vendedor=\""+vendedor+"\"; apellidovendedor=\""+apellido_vendedor+"\"; fechacreacion=\""+fecha_creacion+"\"; pax=\""+pax+"\"; fechainicio=\""+fecha_inicio+"\"; pais=\""+pais_cliente+"\"; tipodeviajero=\""+tipo_viajero+"\";llegapor=\""+llega_por+"\"; productos=\"\"; deal_stage=\""+deal_stage+"\"; idioma_de_preferencia=\""+idioma_de_preferencia_cliente+"\" ";
+    parametros = "idhs=\""+id_deal+"\"; idclientehs=\""+id_contacto+"\"; etapa=\""+etapa+"\";  booking=\""+booking_checkfront+"\"; tipo_cliente=\""+tipo_cliente.toUpperCase()+"\"; tipoOta=\""+tipo_ota+"\";idcliente=\""+id_cliente+"\"; rutempresa=\""+rut_empresa+"\"; nombrecliente=\""+nombre_cliente+"\";apellidoCliente=\""+apellido_cliente+"\"; emaildecontacto=\""+email_cliente+"\";mailcliente=\""+email_cliente+"\"; nombrenegocio=\""+nombre_negocio+"\"; monto=\""+monto+"\";moneda=\""+moneda+"\"; mailvendedor=\""+email_vendedor+"\"; vendedor=\""+vendedor+"\"; apellidovendedor=\""+apellido_vendedor+"\"; fechacreacion=\""+fecha_creacion+"\"; pax=\""+pax+"\"; fechainicio=\""+fecha_inicio+"\"; pais=\""+pais_cliente+"\"; tipodeviajero=\""+tipo_viajero+"\";llegapor=\""+llega_por+"\"; productos=\"\"; deal_stage=\""+deal_stage+"\"; idioma_de_preferencia=\""+idioma_de_preferencia_cliente+"\" ";
     
     let url_2 =
       `https://` +
@@ -726,9 +740,56 @@ async function createDeal(campos = {}) {
   }
 }
 
-async function IngresarNegocioHubspot() {
+async function crearListaParticipantes(campos = {}) {
+  let id_deal = campos.objectId;
+
+  let pipeline_to = "76c9c89c-91f7-42ca-93ba-34a0aa882cca"; // pipeline TO
+  let pipeline_fit = "default"; // pipeline FIT
+
+  let url_deal = "https://api.hubapi.com/deals/v1/deal/"+id_deal;
+
+  let data_deal = await obtenerDatosFetch(url_deal);
+
+  let id_contacto = data_deal.associations?.associatedVids[0];
+
+  let tipo_cliente = data_deal.properties.pipeline?.value;
+
+  if(tipo_cliente == pipeline_fit){
+    tipo_cliente = "FIT";
+  }else if(tipo_cliente == pipeline_to){
+    tipo_cliente = "TO";
+  }else{
+    tipo_cliente = "FIT";
+  }
+
+  let url_contacto = "https://api.hubapi.com/contacts/v1/contact/vid/"+id_contacto+"/profile";
+
+  let data_contacto = await obtenerDatosFetch(url_contacto);
+
   
+  let email_contacto = data_contacto.properties.email?.value; 
+
+  let url_lista_participantes = "https://participantes.cascada.systems/formulario/?cliente="+tipo_cliente+"&idd="+id_deal+"&idc="+id_contacto;
+  
+
+  let url = "https://api.hubapi.com/crm/v3/objects/0-3/"+id_deal;
+
+  let response = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${TOKEN_HUBSPOT}`,
+      },
+      body: JSON.stringify({
+        "properties": {
+            "url_lista_de_participantes": url_lista_participantes
+        }
+      }),
+    });
+      let data = await response.json();       
+
 }
+
 
 
 async function obtenerDatosFetch(url) {

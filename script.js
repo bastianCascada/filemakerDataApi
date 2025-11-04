@@ -185,7 +185,47 @@ app.post("/modificarQpax", async (req, res) => {
   }
 });
 
+// app.post("/modificarMontoFilemaker", async (req, res) => {
+//   let data = req.body;
+
+//   if(data.properties.generado_en_sistema != undefined){
+
+//     let r_filemaker = data.properties.generado_en_sistema.value;
+//     let monto = data.properties.amount.value;
+
+  
+  
+//     let campos = {
+//       "": monto,
+//     };
+
+//     try {
+//       const result = await updateDeal(r_filemaker, campos);
+//       res.json({
+//         success: true,
+//         message: "Deal actualizado correctamente.",
+//         result,
+//       });
+
+//       console.log("✅ Deal actualizado correctamente");
+//     } catch (error) {
+//       res.status(500).json({
+//         success: false,
+//         message: "Error al actualizar el deal",
+//         error: error.message,
+//       });
+
+//       console.log("❌ Error al actualizar el deal");
+//     }
+//   }else{
+//     await createDeal(data);
+//     // console.log("El R del negocio aun no se ha creado");
+//   }
+  
+// });
+
 app.post("/create-deal", async (req, res) => {
+  
   res.status(200).json({ success: true, message: "Recibido" });
 
   // Luego seguir procesando
@@ -456,7 +496,7 @@ async function createDeal(campos = {}) {
     let id_propietario = data_deal.properties.hubspot_owner_id?.value ;
 
     let url_vendedor  = "https://api.hubspot.com/crm/v3/owners/"+id_propietario;
-
+    
 
     let data_vendedor = await obtenerDatosFetch(url_vendedor);
 
@@ -566,7 +606,7 @@ async function createDeal(campos = {}) {
         tipo_cliente = "RECEPTIVO / OTA";
 
       }                           
-
+      
 
       if(tipo_cliente.toUpperCase() == "RECEPTIVO / FIT" || (tipo_cliente.toUpperCase() == "RECEPTIVO / OTA" && tipo_ota == 'P2')){
 
@@ -697,7 +737,7 @@ async function createDeal(campos = {}) {
         
 
     
-    parametros = "idhs=\""+id_deal+"\"; idclientehs=\""+id_contacto+"\"; etapa=\""+etapa+"\";  booking=\""+booking_checkfront+"\"; tipo_cliente=\""+tipo_cliente.toUpperCase()+"\"; tipoOta=\""+tipo_ota+"\";idcliente=\""+id_cliente+"\"; rutempresa=\""+rut_empresa+"\"; nombrecliente=\""+nombre_cliente+"\";apellidoCliente=\""+apellido_cliente+"\"; emaildecontacto=\""+email_cliente+"\";mailcliente=\""+email_cliente+"\"; nombrenegocio=\""+nombre_negocio+"\"; monto=\""+monto+"\";moneda=\""+moneda+"\"; mailvendedor=\""+email_vendedor+"\"; vendedor=\""+vendedor+"\"; apellidovendedor=\""+apellido_vendedor+"\"; fechacreacion=\""+fecha_creacion+"\"; pax=\""+pax+"\"; fechainicio=\""+fecha_inicio+"\"; pais=\""+pais_cliente+"\"; tipodeviajero=\""+tipo_viajero+"\";llegapor=\""+llega_por+"\"; productos=\"\"; deal_stage=\""+deal_stage+"\"; idioma_de_preferencia=\""+idioma_de_preferencia_cliente+"\" ";
+    parametros = "idhs=\""+id_deal+"\"; idclientehs=\""+id_contacto+"\"; etapa=\""+etapa+"\";  booking=\""+booking_checkfront+"\"; tipocliente=\""+tipo_cliente.toUpperCase()+"\"; tipoOta=\""+tipo_ota+"\";idcliente=\""+id_cliente+"\"; rutempresa=\""+rut_empresa+"\"; nombrecliente=\""+nombre_cliente+"\";apellidoCliente=\""+apellido_cliente+"\"; emaildecontacto=\""+email_cliente+"\";mailcliente=\""+email_cliente+"\"; nombrenegocio=\""+nombre_negocio+"\"; monto=\""+monto+"\";moneda=\""+moneda+"\"; mailvendedor=\""+email_vendedor+"\"; vendedor=\""+vendedor+"\"; apellidovendedor=\""+apellido_vendedor+"\"; fechacreacion=\""+fecha_creacion+"\"; pax=\""+pax+"\"; fechainicio=\""+fecha_inicio+"\"; pais=\""+pais_cliente+"\"; tipodeviajero=\""+tipo_viajero+"\";llegapor=\""+llega_por+"\"; productos=\"\"; deal_stage=\""+deal_stage+"\"; idioma_de_preferencia=\""+idioma_de_preferencia_cliente+"\" ";
     
     let url_2 =
       `https://` +

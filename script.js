@@ -796,6 +796,8 @@ async function crearListaParticipantes(campos = {}) {
   let url_contacto = "https://api.hubapi.com/contacts/v1/contact/vid/"+id_contacto+"/profile";
 
 if(id_contacto == undefined){
+  console.log("No existe id_contacto !!!");
+  
   id_contacto = "";
 }
 console.log(id_contacto);

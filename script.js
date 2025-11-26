@@ -185,44 +185,35 @@ app.post("/modificarQpax", async (req, res) => {
   }
 });
 
-// app.post("/modificarMontoFilemaker", async (req, res) => {
-//   let data = req.body;
+app.post("/modificarMontoFilemaker", async (req, res) => {
+  let data = req.body;
 
-//   if(data.properties.generado_en_sistema != undefined){
-
-//     let r_filemaker = data.properties.generado_en_sistema.value;
-//     let monto = data.properties.amount.value;
-
+  console.log(data);
   
+  if(data.properties.generado_en_sistema != undefined){
+
+    let objectId = data.objectId;
+    let r_filemaker = data.properties.generado_en_sistema.value;
+    let monto = data.properties.amount.value;
+
+    let dataParaFilemaker = {
+      "objectId": objectId,
+      "properties": {
+          "generado_en_sistema": r_filemaker,
+          "amount": monto
+      }
+    };
+
+
+
+    ejecutarScriptEnFM("ActualizarCambioDeMonto", dataParaFilemaker);
+
+  }else{
+    // await createDeal(data);
+    // console.log("El R del negocio aun no se ha creado");
+  }
   
-//     let campos = {
-//       "": monto,
-//     };
-
-//     try {
-//       const result = await updateDeal(r_filemaker, campos);
-//       res.json({
-//         success: true,
-//         message: "Deal actualizado correctamente.",
-//         result,
-//       });
-
-//       console.log("✅ Deal actualizado correctamente");
-//     } catch (error) {
-//       res.status(500).json({
-//         success: false,
-//         message: "Error al actualizar el deal",
-//         error: error.message,
-//       });
-
-//       console.log("❌ Error al actualizar el deal");
-//     }
-//   }else{
-//     await createDeal(data);
-//     // console.log("El R del negocio aun no se ha creado");
-//   }
-  
-// });
+});
 
 app.post("/create-deal", async (req, res) => {
   
@@ -807,8 +798,6 @@ async function crearListaParticipantes(campos = {}) {
   let data_contacto = await obtenerDatosFetch(url_contacto);
 
   
-  let email_contacto = data_contacto.properties.email?.value; 
-
   let url_lista_participantes = "https://participantes.cascada.systems/formulario/?cliente="+tipo_cliente+"&idd="+id_deal+"&idc="+id_contacto;
   
 
@@ -858,6 +847,39 @@ async function obtenerDatosFetch(url) {
   } catch (error) {
     console.error("Hubo un problema con la operación de fetch:", error);
   }
+}
+
+async function ejecutarScriptEnFM(guionFM, data) {
+
+  token = await getFileMakerToken();
+    if (!token) {
+      throw new Error("No se pudo obtener el token de FileMaker.");
+    }
+
+  const url =
+    `https://` +
+    FM_HOST +
+    `/fmi/data/vLatest/databases/` +
+    DATABASE +
+    `/layouts/Negocios%20PHP/script/${guionFM}?script.param=${encodeURIComponent(data)}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    });
+
+    const data = await response.json();
+
+    console.log(data);
+    
+  } catch (error) {
+    console.error("🚨 Error al ejecutar guion '"+ guionFM +"':", error.message);
+    throw error;
+  } 
+  
 }
 
 function dealStageName(codigoDealStage) {

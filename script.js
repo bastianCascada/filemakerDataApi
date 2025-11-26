@@ -798,6 +798,8 @@ async function crearListaParticipantes(campos = {}) {
 if(id_contacto == undefined){
   id_contacto = "";
 }
+console.log(id_contacto);
+
   
   let url_lista_participantes = "https://participantes.cascada.systems/formulario/?cliente="+tipo_cliente+"&idd="+id_deal+"&idc="+id_contacto;
   

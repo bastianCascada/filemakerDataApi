@@ -795,7 +795,6 @@ async function crearListaParticipantes(campos = {}) {
 
   let url_contacto = "https://api.hubapi.com/contacts/v1/contact/vid/"+id_contacto+"/profile";
 
-  let data_contacto = await obtenerDatosFetch(url_contacto);
 
   
   let url_lista_participantes = "https://participantes.cascada.systems/formulario/?cliente="+tipo_cliente+"&idd="+id_deal+"&idc="+id_contacto;

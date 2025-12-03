@@ -240,6 +240,19 @@ app.post("/crear_lista_participantes", async (req, res) => {
   }
 });
 
+app.post("/get_deal", async (req, res) => {
+  res.status(200).json({ success: true, message: "Recibido" });
+
+  // Luego seguir procesando
+  try {
+    const token = await getFileMakerToken();
+
+    await getDeal(token, req.body); // o lo que corresponda
+  } catch (error) {
+    console.error("❌ Error obtener el deal :", error);
+  }
+});
+
 
 
 // ****************************[FIN] RUTAS****************************
@@ -340,7 +353,6 @@ async function getDeal(token, codigoNegocio) {
   // const token = await getFileMakerToken();
 
   const url =
-    // Servidor de pruebas
     "https://" +
     FM_HOST +
     "/fmi/data/vLatest/databases/" +

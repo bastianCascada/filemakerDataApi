@@ -258,7 +258,8 @@ app.post("/get_data_participante", async (req, res) => {
         pais: data_negocio.fieldData.PAIS,
         codigo_pais: data_negocio.fieldData['CODIGO PAIS'],
         direccion: data_negocio.fieldData.DIRECCION,
-        ciudad: data_negocio.fieldData.CIUDAD
+        ciudad: data_negocio.fieldData.CIUDAD,
+        comuna: data_negocio.fieldData.COMUNA
     };
 
     // AQUI enviamos la respuesta final al cliente
@@ -408,7 +409,12 @@ async function getDeal(token, codigoNegocio) {
   } catch (error) {
     console.error("🚨 Error al buscar deal:", error.message);
     throw error;
-  } 
+  } finally {
+    if (token) {
+      console.log("⏳ Cerrando sesión de FileMaker...");
+      await logoutFileMakerSession(token);
+    }
+  }
 
 }
 

@@ -265,6 +265,8 @@ app.post("/get_data_participante", async (req, res) => {
         data: respuestaData 
     });
 
+    await logoutFileMakerSession(token);
+
   } catch (error) {
     console.error("❌ Error:", error);
     // Es importante responder con error si falla

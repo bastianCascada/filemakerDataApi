@@ -409,12 +409,7 @@ async function getDeal(token, codigoNegocio) {
   } catch (error) {
     console.error("🚨 Error al buscar deal:", error.message);
     throw error;
-  } finally {
-    if (token) {
-      console.log("⏳ Cerrando sesión de FileMaker...");
-      await logoutFileMakerSession(token);
-    }
-  }
+  } 
 
 }
 

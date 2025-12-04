@@ -1,6 +1,10 @@
 require("dotenv").config();
 const express = require("express");
+const cors = require('cors'); 
 const app = express();
+
+app.use(cors());
+
 // servidor de pruebas
 // const FM_HOST = "190.151.60.197";
 // const DATABASE = "Negocios%20Receptivo_prueba";
@@ -240,16 +244,33 @@ app.post("/crear_lista_participantes", async (req, res) => {
   }
 });
 
-app.post("/get_deal", async (req, res) => {
-  res.status(200).json({ success: true, message: "Recibido" });
+app.post("/get_data_participante", async (req, res) => {
+  console.log("entra a get deal con:", req.body);
 
-  // Luego seguir procesando
   try {
     const token = await getFileMakerToken();
+    const data_negocio = await getDeal(token, req.body.codigo_negocio);
+    
+    // Extraemos los datos para enviarlos limpios
+    console.log(data_negocio);
+    
+    const respuestaData = {
+        pais: data_negocio.fieldData.PAIS,
+        codigo_pais: data_negocio.fieldData['CODIGO PAIS'],
+        direccion: data_negocio.fieldData.DIRECCION,
+        ciudad: data_negocio.fieldData.CIUDAD
+    };
 
-    await getDeal(token, req.body); // o lo que corresponda
+    // AQUI enviamos la respuesta final al cliente
+    res.status(200).json({ 
+        success: true, 
+        data: respuestaData 
+    });
+
   } catch (error) {
-    console.error("❌ Error obtener el deal :", error);
+    console.error("❌ Error:", error);
+    // Es importante responder con error si falla
+    res.status(500).json({ success: false, message: "Error al obtener datos" });
   }
 });
 
@@ -378,7 +399,8 @@ async function getDeal(token, codigoNegocio) {
     const data = await response.json();
 
     if (response.ok && data.response.data.length > 0) {
-      return data.response.data[0].recordId;
+      // return data.response.data[0].recordId;
+      return data.response.data[0];
     } else {
       console.warn("🔍 Deal no encontrado para:", codigoNegocio);
       return null;
@@ -402,8 +424,8 @@ async function updateDeal(codigoNegocio, campos) {
     }
 
     // El recordId solo lo buscamos una vez.
-    const recordId = await getDeal(token, codigoNegocio);
-    if (!recordId) {
+    const data_negocio = await getDeal(token, codigoNegocio);
+    if (!data_negocio.recordId) {
       throw new Error(`❌ No se encontró el deal con código: ${codigoNegocio}`);
     }
 
@@ -417,7 +439,7 @@ async function updateDeal(codigoNegocio, campos) {
           FM_HOST +
           `/fmi/data/vLatest/databases/` +
           DATABASE +
-          `/layouts/Negocios%20PHP/records/${recordId}`;
+          `/layouts/Negocios%20PHP/records/${data_negocio.recordId}`;
 
         const response = await fetch(url, {
           method: "PATCH",

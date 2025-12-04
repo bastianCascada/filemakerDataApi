@@ -191,8 +191,6 @@ app.post("/modificarQpax", async (req, res) => {
 
 app.post("/modificarMontoFilemaker", async (req, res) => {
   let data = req.body;
-
-  console.log(data);
   
   if(data.properties.generado_en_sistema != undefined){
 
@@ -252,7 +250,6 @@ app.post("/get_data_participante", async (req, res) => {
     const data_negocio = await getDeal(token, req.body.codigo_negocio);
     
     // Extraemos los datos para enviarlos limpios
-    console.log(data_negocio);
     
     const respuestaData = {
         pais: data_negocio.fieldData.PAIS,

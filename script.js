@@ -66,13 +66,24 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
   if(data.properties.generado_en_sistema != undefined){
 
     let r_filemaker = data.properties.generado_en_sistema.value;
-    let dealStage = dealStageName(data.properties.dealstage.value);
+    let dealStageCode = data.properties.dealstage.value;
+    let dealStage = dealStageName(dealStageCode);
+    let id_hs = data.objectId;
+    let status_booking = "VACIO";
 
-  
+  if(dealStageCode == "205628d6-121b-4c99-921b-fb79a02eba79" || dealStageCode == '28496' || dealStageCode == 'closedwon' || dealStageCode == '892488'){            
+    let etapa = "NEGOCIO";
+  }else if(dealStageCode == 'appointmentscheduled' || dealStageCode == '28494' || dealStageCode == '455777'){ // solicita disponibilidad
+    let etapa = "COTIZACION";
+  }
   
     let campos = {
       "ESTADO HS": dealStage,
     };
+
+    
+    let data_fm = "idhs=\""+id_hs+"\";  generado_en_sistema=\""+r_filemaker+"\"; etapa=\""+etapa+"\"; status_booking=\""+status_booking+"\"";
+
 
     try {
       const result = await updateDeal(r_filemaker, campos);
@@ -81,6 +92,8 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
         message: "Deal actualizado correctamente.",
         result,
       });
+
+      ejecutarScriptEnFM("ActualizarNegocioHS", data_fm);
 
       console.log("✅ Deal actualizado correctamente");
     } catch (error) {

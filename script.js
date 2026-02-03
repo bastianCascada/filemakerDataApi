@@ -70,6 +70,13 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
     let dealStage = dealStageName(dealStageCode);
     let id_hs = data.objectId;
     let status_booking = "VACIO";
+
+    let booking_checkfront = data.properties.booking_checkfront.value;
+    
+    if(booking_checkfront){
+        status_booking = data.properties.status_checkfront.value;
+    }
+
     let etapa = "";
 
     console.log(dealStageCode);

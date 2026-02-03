@@ -70,14 +70,15 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
     let dealStage = dealStageName(dealStageCode);
     let id_hs = data.objectId;
     let status_booking = "VACIO";
+    let etapa = "";
 
     console.log(dealStageCode);
     
 
   if(dealStageCode == "205628d6-121b-4c99-921b-fb79a02eba79" || dealStageCode == '28496' || dealStageCode == 'closedwon' || dealStageCode == '892488'){            
-    let etapa = "NEGOCIO";
+    etapa = "NEGOCIO";
   }else if(dealStageCode == 'appointmentscheduled' || dealStageCode == '28494' || dealStageCode == '455777'){ // solicita disponibilidad
-    let etapa = "COTIZACION";
+    etapa = "COTIZACION";
   }
   
     let campos = {

@@ -299,6 +299,9 @@ app.post("/get_data_participante", async (req, res) => {
 });
 
 app.post("/modificarPropietarioNegocio", async (req, res) => {
+
+  res.status(200).json({ success: true, message: "entrando a modificar el propietario del negocio..." });
+
   let data = req.body;
 
   if(data.properties.generado_en_sistema != undefined){

@@ -308,7 +308,7 @@ app.post("/modificarPropietarioNegocio", async (req, res) => {
    }else{
     let id_deal = data.objectId;
     let r_filemaker = data.properties.generado_en_sistema.value;
-    let id_checkfront = data.properties.booking_checkfront.value;
+    let id_checkfront = data.properties.booking_checkfront?.value;
     let id_propietario = data.properties.hubspot_owner_id.value;
     let cambiado_por = data.properties.hubspot_owner_id.sourceId;
     let pipeline = data.properties.pipeline.value;

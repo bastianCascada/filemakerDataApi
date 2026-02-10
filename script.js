@@ -322,23 +322,23 @@ app.post("/modificarPropietarioNegocio", async (req, res) => {
 
     let data_propietario_total = await obtenerDatosFetch(url_propietario);
 
-  //   let data_propietario = {
+    let data_propietario = {
 
-  //           "n_negocio":      r_filemaker,
+            "n_negocio":      r_filemaker,
 
-  //           "nombre":         data_propietario_total.firstName,
+            "nombre":         data_propietario_total.firstName,
 
-  //           "apellido":       data_propietario_total.lastName,
+            "apellido":       data_propietario_total.lastName,
 
-  //           "email":          data_propietario_total.email,
+            "email":          data_propietario_total.email,
 
-  //           "llega_por":      llega_por,
+            "llega_por":      llega_por,
 
-  //           "cambiado_por":   cambiado_por
+            "cambiado_por":   cambiado_por
 
-  //  };
+   };
 
-  let data_propietario = "n_negocio=\""+r_filemaker+"\";  nombre=\""+data_propietario_total.firstName+"\"; apellido=\""+data_propietario_total.lastName+"\"; email=\""+data_propietario_total.email+"\"; llega_por=\""+llega_por+"\"; cambiado_por=\""+cambiado_por+"\"";
+  // let data_propietario = "n_negocio=\""+r_filemaker+"\";  nombre=\""+data_propietario_total.firstName+"\"; apellido=\""+data_propietario_total.lastName+"\"; email=\""+data_propietario_total.email+"\"; llega_por=\""+llega_por+"\"; cambiado_por=\""+cambiado_por+"\"";
 
    ejecutarScriptEnFM("notificarCambioDePropietario", data_propietario);
 
@@ -1035,7 +1035,7 @@ async function obtenerDatosFetch(url) {
   }
 }
 
-async function ejecutarScriptEnFM(guionFM, data) {
+async function ejecutarScriptEnFM(guionFM, data_fm) {
 
   token = await getFileMakerToken();
     if (!token) {
@@ -1047,7 +1047,7 @@ async function ejecutarScriptEnFM(guionFM, data) {
     FM_HOST +
     `/fmi/data/vLatest/databases/` +
     DATABASE +
-    `/layouts/Negocios%20PHP/script/${guionFM}?script.param=${encodeURIComponent(data)}`;
+    `/layouts/Negocios%20PHP/script/${guionFM}?script.param=${encodeURIComponent(data_fm)}`;
 
   try {
     const response = await fetch(url, {

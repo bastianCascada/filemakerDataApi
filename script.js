@@ -72,7 +72,7 @@ app.post("/modificarEtapaNegocio", async (req, res) => {
     let status_booking = "VACIO";
 
     let booking_checkfront = data.properties.booking_checkfront.value;
-    
+
     if(booking_checkfront){
         status_booking = data.properties.status_checkfront.value;
     }
@@ -295,6 +295,124 @@ app.post("/get_data_participante", async (req, res) => {
     console.error("❌ Error:", error);
     // Es importante responder con error si falla
     res.status(500).json({ success: false, message: "Error al obtener datos" });
+  }
+});
+
+app.post("/modificarPropietarioNegocio", async (req, res) => {
+  let data = req.body;
+
+  if(data.properties.generado_en_sistema != undefined){
+    if(data.properties.hubspot_owner_id.source == "API"){ // cambio realizado por la API como respuesta de restablecimiento (se cancela la modificación)
+      console.log("Cambio realizado por la API");
+      
+   }else{
+    let id_deal = data.objectId;
+    let r_filemaker = data.properties.generado_en_sistema.value;
+    let id_checkfront = data.properties.booking_checkfront.value;
+    let id_propietario = data.properties.hubspot_owner_id.value;
+    let cambiado_por = data.properties.hubspot_owner_id.sourceId;
+    let pipeline = data.properties.pipeline.value;
+    let llega_por = data.properties.llega_por.value;
+    let usuario_autorizado = true;
+
+    let url_propietario  = "https://api.hubspot.com/crm/v3/owners/"+id_propietario;
+
+    let data_propietario_total = await obtenerDatosFetch(url_propietario);
+
+    let data_propietario = {
+
+            "n_negocio":      r_filemaker,
+
+            "nombre":         data_propietario_total.firstName,
+
+            "apellido":       data_propietario_total.lastName,
+
+            "email":          data_propietario_total.email,
+
+            "llega_por":      llega_por,
+
+            "cambiado_por":   cambiado_por
+
+   };
+
+   ejecutarScriptEnFM("notificarCambioDePropietario", data_propietario);
+
+    // switch(pipeline){
+
+    //      case "default"   : //FIT
+
+    //         if(cambiado_por == "chloe@cascada.travel" ||
+
+    //            cambiado_por == "isabel@cascada.travel" ||
+
+    //            cambiado_por == "patricio@cascada.travel" ||
+
+    //            cambiado_por == "david@cascada.travel" ||
+
+    //            cambiado_por == "userId:6358169" ||
+
+    //            cambiado_por == "userId:6351451" ||
+
+    //            cambiado_por == "userId:6286929" ||
+
+    //            cambiado_por == "userId:7747062")
+
+    //            usuario_autorizado = true;
+
+    //         break;
+
+    //   case "76c9c89c-91f7-42ca-93ba-34a0aa882cca"   : // TO
+
+    //         if(cambiado_por == "paula.b@cascada.travel" || 
+
+    //         cambiado_por == "lorena@cascada.travel" || 
+
+    //         cambiado_por == "marilia@cascada.travel" || 
+
+    //         cambiado_por == "isabel@cascada.travel" || 
+
+    //         cambiado_por == "patricio@cascada.travel" || 
+
+    //         cambiado_por == "david@cascada.travel" ||
+
+    //         cambiado_por == "userId:6351454" ||
+
+    //         cambiado_por == "userId:6351451" ||
+
+    //         cambiado_por == "userId:6286929" ||
+
+    //         cambiado_por == "userId:7747062")
+
+    //            usuario_autorizado = true;
+
+    //         break;
+
+    //   case "c787fac9-442b-4ec7-b009-5af7f023d99e"   : // OTA
+
+    //         if(cambiado_por == "chloe@cascada.travel" || 
+
+    //         cambiado_por == "isabel@cascada.travel" || 
+
+    //         cambiado_por == "patricio@cascada.travel" || 
+
+    //         cambiado_por == "david@cascada.travel" ||
+
+    //         cambiado_por == "userId:6358169" ||
+
+    //         cambiado_por == "userId:6351451" ||
+
+    //         cambiado_por == "userId:6286929" ||
+
+    //         cambiado_por == "userId:7747062")
+
+    //            usuario_autorizado = true;
+
+    //         break;
+
+    //   }
+
+
+   }
   }
 });
 

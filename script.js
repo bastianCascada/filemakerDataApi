@@ -336,7 +336,7 @@ app.post("/modificarPropietarioNegocio", async (req, res) => {
 
   console.log(data_propietario);
   
-   ejecutarScriptEnFM("notificarCambioDePropietario", data_propietario);
+   ejecutarScriptEnFM("notificarCambioDePropietario", JSON.stringify(data_propietario));
 
     // switch(pipeline){
 

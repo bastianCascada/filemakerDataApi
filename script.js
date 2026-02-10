@@ -322,21 +322,23 @@ app.post("/modificarPropietarioNegocio", async (req, res) => {
 
     let data_propietario_total = await obtenerDatosFetch(url_propietario);
 
-    let data_propietario = {
+  //   let data_propietario = {
 
-            "n_negocio":      r_filemaker,
+  //           "n_negocio":      r_filemaker,
 
-            "nombre":         data_propietario_total.firstName,
+  //           "nombre":         data_propietario_total.firstName,
 
-            "apellido":       data_propietario_total.lastName,
+  //           "apellido":       data_propietario_total.lastName,
 
-            "email":          data_propietario_total.email,
+  //           "email":          data_propietario_total.email,
 
-            "llega_por":      llega_por,
+  //           "llega_por":      llega_por,
 
-            "cambiado_por":   cambiado_por
+  //           "cambiado_por":   cambiado_por
 
-   };
+  //  };
+
+  let data_propietario = "n_negocio=\""+r_filemaker+"\";  nombre=\""+data_propietario_total.firstName+"\"; apellido=\""+data_propietario_total.lastName+"\"; email=\""+data_propietario_total.email+"\"; llega_por=\""+llega_por+"\"; cambiado_por=\""+cambiado_por+"\"";
 
    ejecutarScriptEnFM("notificarCambioDePropietario", data_propietario);
 

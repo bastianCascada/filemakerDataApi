@@ -366,7 +366,7 @@ app.post("/negocioPerdidoFM", async (req, res) => {
     let data_negocio = {
             idhubspot: id_deal,
             idfm: r_filemaker,
-            estado: estado,
+            estado: etapa,
             motivo_perdida: motivo_perdida    
 
    };

@@ -347,7 +347,7 @@ app.post("/negocioPerdidoFM", async (req, res) => {
 
     let id_deal = data.objectId;
     let r_filemaker = data.properties.generado_en_sistema.value;
-    let etapa = data.properties.dealStage.value;
+    let etapa = data.properties.dealstage.value;
     let motivo_perdida = "";
     let pipeline = data.properties.pipeline.value;
 

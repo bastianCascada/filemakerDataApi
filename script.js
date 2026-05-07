@@ -331,91 +331,53 @@ app.post("/modificarPropietarioNegocio", async (req, res) => {
             cambiado_por:   cambiado_por
 
    };
-
-  // let data_propietario = "n_negocio=\""+r_filemaker+"\";  nombre=\""+data_propietario_total.firstName+"\"; apellido=\""+data_propietario_total.lastName+"\"; email=\""+data_propietario_total.email+"\"; llega_por=\""+llega_por+"\"; cambiado_por=\""+cambiado_por+"\"";
-
-  console.log(data_propietario);
   
    ejecutarScriptEnFM("notificarCambioDePropietario", JSON.stringify(data_propietario));
-
-    // switch(pipeline){
-
-    //      case "default"   : //FIT
-
-    //         if(cambiado_por == "chloe@cascada.travel" ||
-
-    //            cambiado_por == "isabel@cascada.travel" ||
-
-    //            cambiado_por == "patricio@cascada.travel" ||
-
-    //            cambiado_por == "david@cascada.travel" ||
-
-    //            cambiado_por == "userId:6358169" ||
-
-    //            cambiado_por == "userId:6351451" ||
-
-    //            cambiado_por == "userId:6286929" ||
-
-    //            cambiado_por == "userId:7747062")
-
-    //            usuario_autorizado = true;
-
-    //         break;
-
-    //   case "76c9c89c-91f7-42ca-93ba-34a0aa882cca"   : // TO
-
-    //         if(cambiado_por == "paula.b@cascada.travel" || 
-
-    //         cambiado_por == "lorena@cascada.travel" || 
-
-    //         cambiado_por == "marilia@cascada.travel" || 
-
-    //         cambiado_por == "isabel@cascada.travel" || 
-
-    //         cambiado_por == "patricio@cascada.travel" || 
-
-    //         cambiado_por == "david@cascada.travel" ||
-
-    //         cambiado_por == "userId:6351454" ||
-
-    //         cambiado_por == "userId:6351451" ||
-
-    //         cambiado_por == "userId:6286929" ||
-
-    //         cambiado_por == "userId:7747062")
-
-    //            usuario_autorizado = true;
-
-    //         break;
-
-    //   case "c787fac9-442b-4ec7-b009-5af7f023d99e"   : // OTA
-
-    //         if(cambiado_por == "chloe@cascada.travel" || 
-
-    //         cambiado_por == "isabel@cascada.travel" || 
-
-    //         cambiado_por == "patricio@cascada.travel" || 
-
-    //         cambiado_por == "david@cascada.travel" ||
-
-    //         cambiado_por == "userId:6358169" ||
-
-    //         cambiado_por == "userId:6351451" ||
-
-    //         cambiado_por == "userId:6286929" ||
-
-    //         cambiado_por == "userId:7747062")
-
-    //            usuario_autorizado = true;
-
-    //         break;
-
-    //   }
 
 
    }
   }
 });
+
+app.post("/negocioPerdidoFM", async (req, res) => {
+
+  res.status(200).json({ success: true, message: "entrando a negocioPerdidoFM..." });
+
+  let data = req.body;
+
+    let id_deal = data.objectId;
+    let r_filemaker = data.properties.generado_en_sistema.value;
+    let etapa = data.properties.dealStage.value;
+    let motivo_perdida = "";
+    let pipeline = data.properties.pipeline.value;
+
+    if(etapa == "28497" || etapa == "048aee24-fb6d-4ad7-8141-3f3c8c282292" || etapa == "closedlost"){
+      etapa = "ANULADO";
+    }
+
+    if(pipeline == "76c9c89c-91f7-42ca-93ba-34a0aa882cca" || pipeline == "c787fac9-442b-4ec7-b009-5af7f023d99e" ){
+      motivo_perdida = data.properties.motivo_de_cierres_perdidos_to.value;
+    }
+    if(pipeline == "default"){
+      motivo_perdida = data.properties.closed_lost_reason.value
+    }
+    
+
+    let data_negocio = {
+            idhubspot: id_deal,
+            idfm: r_filemaker,
+            estado: estado,
+            motivo_perdida: motivo_perdida    
+
+   };
+
+   ejecutarScriptEnFM("negocioPerdidoHS", JSON.stringify(data_negocio));
+
+
+   
+  });
+
+
 
 
 

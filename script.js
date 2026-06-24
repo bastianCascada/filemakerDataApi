@@ -402,7 +402,7 @@ async function getFileMakerToken() {
       },
     });
 
-    const data = await response.json();
+    const data = await response.text();
 
     if (response.ok && data.response && data.response.token) {
       console.log("✅ Token obtenido:", data.response.token);
@@ -436,7 +436,7 @@ async function logoutFileMakerSession(token) {
       method: "DELETE", // El método para cerrar sesión es DELETE
     });
 
-    const data = await response.json();
+    const data = await response.text();
 
     // Una respuesta exitosa de cierre de sesión tiene un código "0"
     if (response.ok && data.messages[0].code === "0") {
@@ -468,7 +468,7 @@ async function getAllDeals() {
       },
     });
 
-    const data = await response.json();
+    const data = await response.text();
   } catch (error) {
     console.error("🚨 Error :", error.message);
   } 
@@ -501,7 +501,7 @@ async function getDeal(token, codigoNegocio) {
       }),
     });
 
-    const data = await response.json();
+    const data = await response.text();
 
     if (response.ok && data.response.data.length > 0) {
       // return data.response.data[0].recordId;
@@ -557,7 +557,7 @@ async function updateDeal(codigoNegocio, campos) {
           }),
         });
 
-        const data = await response.json();
+        const data = await response.text();
 
         // Si la actualización es exitosa, salimos del bucle y retornamos los datos.
         if (response.ok && data.messages[0].code === "0") {
@@ -856,7 +856,7 @@ async function createDeal(campos = {}) {
       ],
       }),
     });
-        let data = await response.json();
+        let data = await response.text();
         
         data = data.response.data[0]?.fieldData
         
@@ -959,7 +959,7 @@ console.log(id_contacto);
         }
       }),
     });
-      let data = await response.json();       
+      let data = await response.text();       
 
 }
 
@@ -1015,7 +1015,7 @@ async function ejecutarScriptEnFM(guionFM, data_fm) {
       }
     });
 
-    const data = await response.json();
+    const data = await response.text();
 
     console.log(data);
     

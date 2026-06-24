@@ -462,7 +462,7 @@ async function getFileMakerToken() {
 //       },
 //     });
 
-//     const data = await response.text();
+//     const data = await response.json();
 
 //     if (response.ok && data.response && data.response.token) {
 //       console.log("✅ Token obtenido:", data.response.token);
@@ -496,7 +496,7 @@ async function logoutFileMakerSession(token) {
       method: "DELETE", // El método para cerrar sesión es DELETE
     });
 
-    const data = await response.text();
+    const data = await response.json();
 
     // Una respuesta exitosa de cierre de sesión tiene un código "0"
     if (response.ok && data.messages[0].code === "0") {
@@ -528,7 +528,7 @@ async function getAllDeals() {
       },
     });
 
-    const data = await response.text();
+    const data = await response.json();
   } catch (error) {
     console.error("🚨 Error :", error.message);
   } 
@@ -561,7 +561,7 @@ async function getDeal(token, codigoNegocio) {
       }),
     });
 
-    const data = await response.text();
+    const data = await response.json();
 
     if (response.ok && data.response.data.length > 0) {
       // return data.response.data[0].recordId;
@@ -617,7 +617,7 @@ async function updateDeal(codigoNegocio, campos) {
           }),
         });
 
-        const data = await response.text();
+        const data = await response.json();
 
         // Si la actualización es exitosa, salimos del bucle y retornamos los datos.
         if (response.ok && data.messages[0].code === "0") {
@@ -916,7 +916,7 @@ async function createDeal(campos = {}) {
       ],
       }),
     });
-        let data = await response.text();
+        let data = await response.json();
         
         data = data.response.data[0]?.fieldData
         
@@ -1019,7 +1019,7 @@ console.log(id_contacto);
         }
       }),
     });
-      let data = await response.text();       
+      let data = await response.json();       
 
 }
 
@@ -1075,7 +1075,7 @@ async function ejecutarScriptEnFM(guionFM, data_fm) {
       }
     });
 
-    const data = await response.text();
+    const data = await response.json();
 
     console.log(data);
     

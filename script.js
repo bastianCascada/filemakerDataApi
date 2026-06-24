@@ -289,7 +289,7 @@ app.post("/get_data_participante", async (req, res) => {
         data: respuestaData 
     });
 
-    await logoutFileMakerSession(token);
+    // await logoutFileMakerSession(token);
 
   } catch (error) {
     console.error("❌ Error:", error);
@@ -385,35 +385,95 @@ app.post("/negocioPerdidoFM", async (req, res) => {
 
 // ****************************[INICIO] FUNCIONES****************************
 
+// Almacenamiento en caché del token en memoria de Node.js
+let cachedFmToken = null;
+let tokenExpirationTime = null;
+let tokenPromise = null; // Evita peticiones duplicadas simultáneas
+
 async function getFileMakerToken() {
-  var url =
-    // Servidor de pruebas
-    "https://" +
-    FM_HOST +
-    "/fmi/data/vLatest/databases/" +
-    DATABASE +
-    "/sessions";
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${encodedCredentials}`,
-      },
-    });
+  const ahora = Date.now();
 
-    const data = await response.text();
-
-    if (response.ok && data.response && data.response.token) {
-      console.log("✅ Token obtenido:", data.response.token);
-      return data.response.token;
-    } else {
-      console.error("❌ Error al obtener token:", data);
-    }
-  } catch (error) {
-    console.error("🚨 Error de conexión con FileMaker:", error.message);
+  // 1. Si el token existe y aún es válido (dejamos un margen de 1 minuto de seguridad), lo reutilizamos
+  if (cachedFmToken && tokenExpirationTime && ahora < (tokenExpirationTime - 60000)) {
+    console.log("♻️ Usando Token de FileMaker desde la caché.");
+    return cachedFmToken;
   }
+
+  // 2. Si ya se está solicitando un token en este instante, esperamos a esa misma promesa
+  if (tokenPromise) {
+    console.log("⏳ Esperando a la petición de token que ya está en curso...");
+    return tokenPromise;
+  }
+
+  // 3. Si no hay token o expiró, creamos una nueva promesa para solicitarlo
+  tokenPromise = (async () => {
+    const url = `https://${FM_HOST}/fmi/data/vLatest/databases/${DATABASE}/sessions`;
+    
+    try {
+      console.log("🌐 Solicitando NUEVO Token a FileMaker Server...");
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${encodedCredentials}`,
+        },
+      });
+
+      const data = await response.json(); // Cambiado a .json() para leerlo directo
+
+      if (response.ok && data.response && data.response.token) {
+        cachedFmToken = data.response.token;
+        // FileMaker expira la sesión a los 15 minutos (900,000 ms) de inactividad
+        tokenExpirationTime = Date.now() + (15 * 60 * 1000); 
+        console.log("✅ Nuevo Token obtenido y guardado en caché.");
+        return cachedFmToken;
+      } else {
+        throw new Error(`No se pudo obtener el token: ${JSON.stringify(data)}`);
+      }
+    } catch (error) {
+      console.error("🚨 Error de conexión con FileMaker al pedir token:", error.message);
+      // Limpiamos la caché en caso de error flagrante
+      cachedFmToken = null;
+      tokenExpirationTime = null;
+      throw error;
+    } finally {
+      // Al terminar la petición (bien o mal), liberamos el candado de la promesa
+      tokenPromise = null;
+    }
+  })();
+
+  return tokenPromise;
 }
+
+// async function getFileMakerToken() {
+//   var url =
+//     // Servidor de pruebas
+//     "https://" +
+//     FM_HOST +
+//     "/fmi/data/vLatest/databases/" +
+//     DATABASE +
+//     "/sessions";
+//   try {
+//     const response = await fetch(url, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Basic ${encodedCredentials}`,
+//       },
+//     });
+
+//     const data = await response.text();
+
+//     if (response.ok && data.response && data.response.token) {
+//       console.log("✅ Token obtenido:", data.response.token);
+//       return data.response.token;
+//     } else {
+//       console.error("❌ Error al obtener token:", data);
+//     }
+//   } catch (error) {
+//     console.error("🚨 Error de conexión con FileMaker:", error.message);
+//   }
+// }
 
 async function logoutFileMakerSession(token) {
   // Es crucial tener un token para poder cerrar la sesión
@@ -596,7 +656,7 @@ async function updateDeal(codigoNegocio, campos) {
   } finally {
     if (token) {
       console.log("⏳ Cerrando sesión de FileMaker...");
-      await logoutFileMakerSession(token);
+      // await logoutFileMakerSession(token);
     }
   }
 }
@@ -813,7 +873,7 @@ async function createDeal(campos = {}) {
 
             try{
 
-              data_contacto_to = obtenerDatosFetch(url_cliente_to); 
+              data_contacto_to = await obtenerDatosFetch(url_cliente_to); 
 
              
               email_contacto_to = data_contacto_to.properties.email?.value;
@@ -867,7 +927,7 @@ async function createDeal(campos = {}) {
         
 
     
-    parametros = "idhs=\""+id_deal+"\"; idclientehs=\""+id_contacto+"\"; etapa=\""+etapa+"\";  booking=\""+booking_checkfront+"\"; tipocliente=\""+tipo_cliente.toUpperCase()+"\"; tipoOta=\""+tipo_ota+"\";idcliente=\""+id_cliente+"\"; rutempresa=\""+rut_empresa+"\"; nombrecliente=\""+nombre_cliente+"\";apellidoCliente=\""+apellido_cliente+"\"; emaildecontacto=\""+email_cliente+"\";mailcliente=\""+email_cliente+"\"; nombrenegocio=\""+nombre_negocio+"\"; monto=\""+monto+"\";moneda=\""+moneda+"\"; mailvendedor=\""+email_vendedor+"\"; vendedor=\""+vendedor+"\"; apellidovendedor=\""+apellido_vendedor+"\"; fechacreacion=\""+fecha_creacion+"\"; pax=\""+pax+"\"; fechainicio=\""+fecha_inicio+"\"; pais=\""+pais_cliente+"\"; tipodeviajero=\""+tipo_viajero+"\";llegapor=\""+llega_por+"\"; productos=\"\"; deal_stage=\""+deal_stage+"\"; idioma_de_preferencia=\""+idioma_de_preferencia_cliente+"\" ";
+    let parametros = "idhs=\""+id_deal+"\"; idclientehs=\""+id_contacto+"\"; etapa=\""+etapa+"\";  booking=\""+booking_checkfront+"\"; tipocliente=\""+tipo_cliente.toUpperCase()+"\"; tipoOta=\""+tipo_ota+"\";idcliente=\""+id_cliente+"\"; rutempresa=\""+rut_empresa+"\"; nombrecliente=\""+nombre_cliente+"\";apellidoCliente=\""+apellido_cliente+"\"; emaildecontacto=\""+email_cliente+"\";mailcliente=\""+email_cliente+"\"; nombrenegocio=\""+nombre_negocio+"\"; monto=\""+monto+"\";moneda=\""+moneda+"\"; mailvendedor=\""+email_vendedor+"\"; vendedor=\""+vendedor+"\"; apellidovendedor=\""+apellido_vendedor+"\"; fechacreacion=\""+fecha_creacion+"\"; pax=\""+pax+"\"; fechainicio=\""+fecha_inicio+"\"; pais=\""+pais_cliente+"\"; tipodeviajero=\""+tipo_viajero+"\";llegapor=\""+llega_por+"\"; productos=\"\"; deal_stage=\""+deal_stage+"\"; idioma_de_preferencia=\""+idioma_de_preferencia_cliente+"\" ";
     
     let url_2 =
       `https://` +
@@ -905,7 +965,7 @@ async function createDeal(campos = {}) {
     if (token) {
       console.log("⏳ Cerrando sesión de FileMaker...");
       // Asume que tienes la función logoutFileMakerSession de las respuestas anteriores
-      await logoutFileMakerSession(token); 
+      // await logoutFileMakerSession(token); 
     }
   }
 }

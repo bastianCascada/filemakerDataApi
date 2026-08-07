@@ -377,34 +377,32 @@ app.post("/negocioPerdidoFM", async (req, res) => {
    
   });
 
-  // Endpoint dinámico para extraer registros de cualquier Layout
-app.get("/api/layout/:nombreLayout", async (req, res) => {
+// Endpoint para buscar/filtrar en cualquier Layout
+app.post("/api/layout/:nombreLayout/buscar", async (req, res) => {
   const { nombreLayout } = req.params;
-  const limit = req.query.limit || 100;
-  const offset = req.query.offset || 1;
+  const { query, limit } = req.body; // Recibimos el arreglo de filtros en el body
+
+  if (!query || !Array.isArray(query)) {
+    return res.status(400).json({
+      success: false,
+      message: "Se requiere un parámetro 'query' que sea un Array con las condiciones de búsqueda."
+    });
+  }
 
   try {
-    const registros = await getLayoutRecords(nombreLayout, limit, offset);
-
-    // Mapeo opcional para devolver la información estructurada de forma limpia
-    const dataLimpia = registros.map(record => ({
-      recordId: record.recordId,
-      modId: record.modId,
-      fieldData: record.fieldData,
-      portalData: record.portalData || {}
-    }));
+    const resultados = await findLayoutRecords(nombreLayout, query, limit || 100);
 
     res.status(200).json({
       success: true,
-      totalCount: dataLimpia.length,
+      totalCount: resultados.length,
       layout: nombreLayout,
-      data: dataLimpia
+      data: resultados.map(r => ({ recordId: r.recordId, fieldData: r.fieldData }))
     });
 
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: `Error al obtener datos del layout '${nombreLayout}'`,
+      message: `Error al buscar en el layout '${nombreLayout}'`,
       error: error.message
     });
   }
@@ -1153,38 +1151,47 @@ function dealStageName(codigoDealStage) {
 }
 
 /**
- * Obtiene registros de un Layout específico en FileMaker.
- * @param {string} layoutName - Nombre del layout en FileMaker
- * @param {number} limit - Cantidad máxima de registros (default 100)
- * @param {number} offset - Registro desde el cual empezar (default 1)
+ * Busca registros en un Layout de FileMaker aplicando filtros (Find Request).
+ * @param {string} layoutName - Nombre del layout
+ * @param {Array<Object>} query - Criterios de búsqueda [{ campo: "valor" }]
+ * @param {number} limit - Cantidad máxima de resultados
  */
-async function getLayoutRecords(layoutName, limit = 100, offset = 1) {
+async function findLayoutRecords(layoutName, query, limit = 100) {
   const token = await getFileMakerToken();
 
   if (!token) {
-    throw new Error("No se pudo obtener el token de autenticación de FileMaker.");
+    throw new Error("No se pudo obtener el token de FileMaker.");
   }
 
-  const url = `https://${FM_HOST}/fmi/data/vLatest/databases/${DATABASE}/layouts/${encodeURIComponent(layoutName)}/records?_limit=${limit}&_offset=${offset}`;
+  const url = `https://${FM_HOST}/fmi/data/vLatest/databases/${DATABASE}/layouts/${encodeURIComponent(layoutName)}/_find`;
 
   try {
     const response = await fetch(url, {
-      method: "GET",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify({
+        query: query,
+        limit: limit.toString()
+      }),
     });
 
     const data = await response.json();
 
+    // Si encuentra registros (código 0)
     if (response.ok && data.messages[0].code === "0") {
-      return data.response.data; // Devuelve el array con los registros
+      return data.response.data;
+    } 
+    // Código 401 en FileMaker significa "No records match the request" (Búsqueda sin resultados)
+    else if (data.messages[0].code === "401") {
+      return [];
     } else {
       throw new Error(`Error FM (${data.messages[0].code}): ${data.messages[0].message}`);
     }
   } catch (error) {
-    console.error(`🚨 Error al obtener datos del layout '${layoutName}':`, error.message);
+    console.error(`🚨 Error al buscar en layout '${layoutName}':`, error.message);
     throw error;
   }
 }

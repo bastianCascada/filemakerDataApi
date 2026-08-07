@@ -377,6 +377,39 @@ app.post("/negocioPerdidoFM", async (req, res) => {
    
   });
 
+  // Endpoint dinámico para extraer registros de cualquier Layout
+app.get("/api/layout/:nombreLayout", async (req, res) => {
+  const { nombreLayout } = req.params;
+  const limit = req.query.limit || 100;
+  const offset = req.query.offset || 1;
+
+  try {
+    const registros = await getLayoutRecords(nombreLayout, limit, offset);
+
+    // Mapeo opcional para devolver la información estructurada de forma limpia
+    const dataLimpia = registros.map(record => ({
+      recordId: record.recordId,
+      modId: record.modId,
+      fieldData: record.fieldData,
+      portalData: record.portalData || {}
+    }));
+
+    res.status(200).json({
+      success: true,
+      totalCount: dataLimpia.length,
+      layout: nombreLayout,
+      data: dataLimpia
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Error al obtener datos del layout '${nombreLayout}'`,
+      error: error.message
+    });
+  }
+});
+
 
 
 
@@ -1117,6 +1150,43 @@ function dealStageName(codigoDealStage) {
   };
 
   return stages[codigoDealStage] ?? "Desconocido";
+}
+
+/**
+ * Obtiene registros de un Layout específico en FileMaker.
+ * @param {string} layoutName - Nombre del layout en FileMaker
+ * @param {number} limit - Cantidad máxima de registros (default 100)
+ * @param {number} offset - Registro desde el cual empezar (default 1)
+ */
+async function getLayoutRecords(layoutName, limit = 100, offset = 1) {
+  const token = await getFileMakerToken();
+
+  if (!token) {
+    throw new Error("No se pudo obtener el token de autenticación de FileMaker.");
+  }
+
+  const url = `https://${FM_HOST}/fmi/data/vLatest/databases/${DATABASE}/layouts/${encodeURIComponent(layoutName)}/records?_limit=${limit}&_offset=${offset}`;
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.messages[0].code === "0") {
+      return data.response.data; // Devuelve el array con los registros
+    } else {
+      throw new Error(`Error FM (${data.messages[0].code}): ${data.messages[0].message}`);
+    }
+  } catch (error) {
+    console.error(`🚨 Error al obtener datos del layout '${layoutName}':`, error.message);
+    throw error;
+  }
 }
 
 // ****************************[FIN] FUNCIONES****************************

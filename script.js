@@ -408,6 +408,36 @@ app.post("/api/layout/:nombreLayout/buscar", async (req, res) => {
   }
 });
 
+// Endpoint para crear o actualizar un registro en cualquier Layout
+app.post("/api/layout/:nombreLayout/guardar", async (req, res) => {
+  const { nombreLayout } = req.params;
+  const { fieldData, recordId } = req.body;
+
+  if (!fieldData || typeof fieldData !== "object") {
+    return res.status(400).json({
+      success: false,
+      message: "Se requiere un objeto 'fieldData' con los campos a guardar."
+    });
+  }
+
+  try {
+    const resultado = await saveOrUpdateRecord(nombreLayout, fieldData, recordId);
+
+    res.status(200).json({
+      success: true,
+      message: recordId ? "Registro actualizado correctamente" : "Registro creado correctamente",
+      data: resultado
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Error al guardar en el layout '${nombreLayout}'`,
+      error: error.message
+    });
+  }
+});
+
 
 
 
@@ -1192,6 +1222,49 @@ async function findLayoutRecords(layoutName, query, limit = 100) {
     }
   } catch (error) {
     console.error(`🚨 Error al buscar en layout '${layoutName}':`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Crea o actualiza un registro en un Layout de FileMaker.
+ * @param {string} layoutName - Nombre del layout
+ * @param {Object} fieldData - Objeto con los campos a guardar { "Campo": "Valor" }
+ * @param {string|null} recordId - Si se pasa un recordId, actualiza (PATCH). Si es null, crea uno nuevo (POST).
+ */
+async function saveOrUpdateRecord(layoutName, fieldData, recordId = null) {
+  const token = await getFileMakerToken();
+
+  if (!token) {
+    throw new Error("No se pudo obtener el token de FileMaker.");
+  }
+
+  // Si enviamos recordId usamos PATCH (modificar), de lo contrario POST (crear)
+  const isUpdate = Boolean(recordId);
+  const method = isUpdate ? "PATCH" : "POST";
+  
+  const baseUrl = `https://${FM_HOST}/fmi/data/vLatest/databases/${DATABASE}/layouts/${encodeURIComponent(layoutName)}/records`;
+  const url = isUpdate ? `${baseUrl}/${recordId}` : baseUrl;
+
+  try {
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ fieldData }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.messages[0].code === "0") {
+      return data.response; // Devuelve el recordId creado o modificado
+    } else {
+      throw new Error(`Error FM (${data.messages[0].code}): ${data.messages[0].message}`);
+    }
+  } catch (error) {
+    console.error(`🚨 Error al guardar en layout '${layoutName}':`, error.message);
     throw error;
   }
 }

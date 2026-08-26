@@ -331,6 +331,9 @@ app.post("/modificarPropietarioNegocio", async (req, res) => {
             cambiado_por:   cambiado_por
 
    };
+
+   console.log(data_propietario);
+   
   
    ejecutarScriptEnFM("notificarCambioDePropietario", JSON.stringify(data_propietario));
 

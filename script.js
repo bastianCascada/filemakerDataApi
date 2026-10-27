@@ -1035,56 +1035,63 @@ async function createDeal(campos = {}) {
 }
 
 async function crearListaParticipantes(campos = {}) {
-  let id_deal = campos.objectId;
-
-  let pipeline_to = "76c9c89c-91f7-42ca-93ba-34a0aa882cca"; // pipeline TO
-  let pipeline_fit = "default"; // pipeline FIT
-
-  let url_deal = "https://api.hubapi.com/deals/v1/deal/"+id_deal;
-
-  let data_deal = await obtenerDatosFetch(url_deal);
-
-  let id_contacto = data_deal.associations?.associatedVids[0];
-
-  let tipo_cliente = data_deal.properties.pipeline?.value;
-
-  if(tipo_cliente == pipeline_fit){
-    tipo_cliente = "FIT";
-  }else if(tipo_cliente == pipeline_to){
-    tipo_cliente = "TO";
-  }else{
-    tipo_cliente = "FIT";
+  // 27-oct-2026: el link se armaba con associatedVids[0] apenas se gatillaba el workflow.
+  // Si el deal todavía no tenía contacto asociado (o HubSpot no respondía), se guardaba un link
+  // con "idc=" vacío o undefined, que el formulario rechaza con "Bad Request !!".
+  // Ahora se reintenta hasta tener contacto y, si no lo hay, NO se escribe un link roto.
+  const id_deal = campos.objectId;
+  if (!id_deal) {
+    console.log("crearListaParticipantes: llegó sin objectId", campos);
+    return;
   }
 
-  let url_contacto = "https://api.hubapi.com/contacts/v1/contact/vid/"+id_contacto+"/profile";
+  const pipeline_to = "76c9c89c-91f7-42ca-93ba-34a0aa882cca"; // pipeline TO
+  const pipeline_fit = "default"; // pipeline FIT
+  const url_deal = "https://api.hubapi.com/deals/v1/deal/" + id_deal;
 
-if(id_contacto == undefined){
-  console.log("No existe id_contacto !!!");
-  
-  id_contacto = "";
-}
-console.log(id_contacto);
+  const INTENTOS = 5;
+  const ESPERA_MS = 30000; // 30 s entre intentos (máximo ~2 minutos)
+  let data_deal = null;
+  let id_contacto = "";
 
-  
-  let url_lista_participantes = "https://participantes.cascada.systems/formulario/?cliente="+tipo_cliente+"&idd="+id_deal+"&idc="+id_contacto;
-  
+  for (let intento = 1; intento <= INTENTOS; intento++) {
+    data_deal = await obtenerDatosFetch(url_deal);
+    const contactos = data_deal?.associations?.associatedVids || [];
+    if (contactos.length > 0) {
+      id_contacto = String(contactos[0]);
+      break;
+    }
+    console.log(`crearListaParticipantes: deal ${id_deal} sin contacto asociado (intento ${intento}/${INTENTOS})`);
+    if (intento < INTENTOS) await new Promise((r) => setTimeout(r, ESPERA_MS));
+  }
 
-  let url = "https://api.hubapi.com/crm/v3/objects/0-3/"+id_deal;
+  if (!id_contacto) {
+    console.error(`❌ crearListaParticipantes: deal ${id_deal} sigue sin contacto; no se escribe el link.`);
+    return;
+  }
 
-  let response = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${TOKEN_HUBSPOT}`,
-      },
-      body: JSON.stringify({
-        "properties": {
-            "url_lista_de_participantes": url_lista_participantes
-        }
-      }),
-    });
-      let data = await response.json();       
+  let tipo_cliente = data_deal.properties?.pipeline?.value;
+  tipo_cliente = tipo_cliente == pipeline_to ? "TO" : "FIT"; // default y cualquier otro pipeline = FIT
 
+  const url_lista_participantes =
+    "https://participantes.cascada.systems/formulario/?cliente=" + tipo_cliente +
+    "&idd=" + id_deal + "&idc=" + id_contacto;
+
+  const response = await fetch("https://api.hubapi.com/crm/v3/objects/0-3/" + id_deal, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${TOKEN_HUBSPOT}`,
+    },
+    body: JSON.stringify({
+      properties: { url_lista_de_participantes: url_lista_participantes },
+    }),
+  });
+  if (!response.ok) {
+    console.error(`❌ crearListaParticipantes: HubSpot rechazó el PATCH del deal ${id_deal}:`, response.status, await response.text());
+    return;
+  }
+  console.log(`✅ Link de participantes guardado en deal ${id_deal}: ${url_lista_participantes}`);
 }
 
 
